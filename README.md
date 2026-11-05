@@ -27,4 +27,5 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 - [X] make GitHub page 
 - [ ] writing workflow - Robin
 - [ ] pull metadata for PLSDB to filter down to Denmark
-- [ ] 
+- [ ] interactive HTML output with plots for visualization - Effiong
+- [ ] example output data structure - Gijs
