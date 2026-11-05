@@ -45,7 +45,7 @@ flowchart LR
 ## Quick start
 
 ```bash
-git clone https://github.com/<org>/clust-assess.git && cd clust-assess
+git clone https://github.com/SPREAD-Hackathon/clust-assess.git && cd clust-assess
 bash tools/install.sh          # creates the `clust-assess` conda env and installs ACCIO (pinned commit)
 
 # 1. assess suspected outbreak plasmids against an existing database
