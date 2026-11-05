@@ -22,18 +22,21 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 ![Workflow diagram](workflow.png)
 
 # Tasks 
-- [ ] get dataset from galaxy onto CLIMB and make pling database - Nathan
+- [X] get dataset from galaxy onto CLIMB and make pling database - Nathan
 - [X] PLSDB pling onto CLIMB (`shared-team/pling_plsdb/`)
 - [ ] run ACCIO on Galaxy test dataset
-- [ ] split PLSDB file prior to ACCIO
-    - [ ] like pling sourmash pre-filtering, separate it by community or subset PLSDB regionally 
+- [X] split PLSDB file prior to ACCIO
+    - [X] like pling sourmash pre-filtering, separate it by community or subset PLSDB regionally (Denmark)
 - [ ] testing pling add with `-asyn` to not re-compute clusters and run fast 
 - [X] make GitHub page 
-- [ ] writing workflow - Robin
-- [ ] pull metadata for PLSDB from Denmark and filter down database
+- [X] writing workflow - Robin
+- [X] pull metadata for PLSDB from Denmark and filter down database
 - [ ] interactive HTML output with plots for visualization - Effiong
 - [X] example output data structure - Gijs
 - [ ] slide crafting - Celia (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
 - [ ] extracting distance distributions for subcommunity/containment files and scripting
-- [ ] pling database for Denmark plasmid subset
+- [X] pling database for Denmark plasmid subset
+- [ ] environment (conda, singularity, etc) for ACCIO
+- [ ] download pipeline & results from CLIMB
+- [ ] positive test dataset from Denmark PLSDB 
 
