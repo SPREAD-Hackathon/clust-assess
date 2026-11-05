@@ -1,4 +1,7 @@
-
+# Core clust-assess env: ACCIO dependencies + Pling 3 + plasnet + helpers.
+# MOB-suite and AMRFinderPlus live in a second env (tools/env-mobsuite.yml):
+# mob_suite 3.1.x pins numpy<1.23.5, while pling 3 needs numpy>=1.26, so they cannot share an env.
+# Pins = versions of the tested local run (2026-11-04).
 name: clust-assess
 channels:
   - conda-forge
@@ -13,17 +16,21 @@ dependencies:
   - intervaltree
   - pysam
   # ACCIO external tools (README "Required External Tools")
-  - blast
+  - blast=2.17.0
   - mash=2.3
-  - mummer4
+  - mummer4=4.0.1
   - samtools
   - bwa
   - minimap2
-  - skani
+  - skani=0.4.0
   # Pling (DCJ-Indel) and plasnet (ACCIO's size-adjusted subcommunities)
-  - pling
-  - plasnet
+  - pling=3.0.3
+  - plasnet=0.7.0
   # clust-assess helpers / tests
   - pyyaml
   - pytest
+  - git
   - pip
+# ACCIO itself is installed by tools/install.sh as an editable install of a pinned clone (tools/accio):
+# its setup.py packages only data/*.csv and data/*.txt, so a regular `pip install git+...` misses
+# data/repetitive.dna.fas and `accio create` fails.

@@ -34,9 +34,15 @@ process VERSIONS {
     script:
     """
     v() { "\$@" 2>&1 | grep -oE '[0-9]+(\\.[0-9]+)+[^ ]*' | head -1; }
+    accio_commit() {
+        local src=\$(python -c 'import importlib.util as u, os; print(os.path.dirname(os.path.dirname(u.find_spec("accio").origin)))' 2>/dev/null)
+        git -C "\$src" rev-parse --short HEAD 2>/dev/null \\
+        || git -C ${projectDir}/tools/accio rev-parse --short HEAD 2>/dev/null \\
+        || echo unknown
+    }
     {
         echo "clust_assess: ${params.version}"
-        echo "accio: \$(python -c 'import importlib.metadata as m; print(m.version("accio"))' 2>/dev/null || echo NA) (commit \$(git -C ${projectDir}/tools/accio rev-parse --short HEAD 2>/dev/null || echo unknown))"
+        echo "accio: \$(python -c 'import importlib.metadata as m; print(m.version("accio"))' 2>/dev/null || echo NA) (commit \$(accio_commit))"
         echo "pling: \$(v pling --version)"
         echo "plasnet: \$(python -c 'import importlib.metadata as m; print(m.version("plasnet"))' 2>/dev/null || echo NA)"
         echo "skani: \$(v skani --version)"

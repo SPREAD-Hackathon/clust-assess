@@ -1,0 +1,10 @@
+# MOB-suite + AMRFinderPlus, called by ACCIO. Kept apart from env-clust-assess.yml (numpy pin conflict).
+# After creating: mob_init && amrfinder -u   (databases are stored inside this env)
+name: clust-assess-mobsuite
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - mob_suite=3.1.9
+  - ncbi-amrfinderplus=4.2.7
