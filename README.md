@@ -30,6 +30,8 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 - [ ] testing pling add with `-asyn` to not re-compute clusters and run fast 
 - [X] make GitHub page 
 - [ ] writing workflow - Robin
-- [X] pull metadata for PLSDB to filter down to Denmark
+- [ ] pull metadata for PLSDB from Denmark and filter down database
 - [ ] interactive HTML output with plots for visualization - Effiong
 - [X] example output data structure - Gijs
+- [ ] slide crafting - Celia
+
