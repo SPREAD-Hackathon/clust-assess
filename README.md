@@ -33,6 +33,6 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 - [ ] pull metadata for PLSDB from Denmark and filter down database
 - [ ] interactive HTML output with plots for visualization - Effiong
 - [X] example output data structure - Gijs
-- [ ] slide crafting - Celia
+- [ ] slide crafting - Celia (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
 - [ ] extracting distance distributions for subcommunity/containment files and scripting
 
