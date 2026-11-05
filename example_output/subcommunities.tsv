@@ -1,0 +1,2 @@
+subcommunity	community	n_inputs	inputs	n_members_in_db	n_members_used	median_dcj_inputs	median_containment_inputs	community_DCJ	community_containment	p_tighter	p_looser	n_subsets	exact_test	status
+community_157_subcommunity_0	community_157	7	pIso15_PT13_Ec5_OXA-48;pIso1_PT1_Eh1_OXA-48;pIso2_PT1_Kp1_OXA-48;pIso5_PT3_Ka1_OXA-48;pIso7_PT5_Ec2_OXA-48;pIso8_PT6_Kp2_OXA-48;pIso9_PT7_Ec3_OXA-48	1	1	3	0	NA	NA	NA	NA	0	False	no_baseline
