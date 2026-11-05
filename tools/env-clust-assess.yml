@@ -1,0 +1,29 @@
+
+name: clust-assess
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  # ACCIO requirements.txt
+  - pandas
+  - biopython
+  - scipy
+  - numpy
+  - intervaltree
+  - pysam
+  # ACCIO external tools (README "Required External Tools")
+  - blast
+  - mash=2.3
+  - mummer4
+  - samtools
+  - bwa
+  - minimap2
+  - skani
+  # Pling (DCJ-Indel) and plasnet (ACCIO's size-adjusted subcommunities)
+  - pling
+  - plasnet
+  # clust-assess helpers / tests
+  - pyyaml
+  - pytest
+  - pip

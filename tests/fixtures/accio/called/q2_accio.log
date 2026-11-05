@@ -1,0 +1,32 @@
+2026-11-05 16:55:15,474 - accio.cli - INFO - Checking system requirements...
+2026-11-05 16:55:18,486 - accio.cli - INFO - 🔍 Starting plasmid analysis for sample: q2
+2026-11-05 16:55:18,486 - accio.cli - INFO - Using database: probe_db
+2026-11-05 16:55:18,486 - accio.core.workflow - INFO - Starting plasmid analysis workflow
+2026-11-05 16:55:18,486 - accio.core.workflow - INFO - Loading assembly contigs
+2026-11-05 16:55:18,492 - accio.core.workflow - INFO - Loaded 1 potential plasmid contigs
+2026-11-05 16:55:18,492 - accio.core.workflow - INFO - Loading plasmid database
+2026-11-05 16:55:18,536 - accio.core.workflow - INFO - Loaded 20 reference plasmids
+2026-11-05 16:55:18,536 - accio.core.workflow - INFO - Running sequence similarity analysis
+2026-11-05 16:55:18,536 - accio.core.workflow - INFO - Running BLAST against plasmid database
+2026-11-05 16:55:18,713 - accio.core.workflow - INFO - Running BLAST against PlasmidFinder database
+2026-11-05 16:55:18,869 - accio.core.workflow - INFO - Running BLAST against repetitive elements
+2026-11-05 16:55:20,811 - accio.core.workflow - INFO - AMRFinder analysis completed for novel plasmids.
+2026-11-05 16:55:20,813 - accio.core.workflow - INFO - Running Mash screening
+2026-11-05 16:55:20,869 - accio.core.workflow - INFO - Running Nucmer alignment
+2026-11-05 16:55:22,535 - accio.core.workflow - INFO - Running PLASMe analysis
+2026-11-05 16:55:22,661 - accio.core.workflow - WARNING - PLASMe analysis failed: PLASMe processing error: [Errno 2] No such file or directory: 'PLASMe.py'
+2026-11-05 16:55:22,661 - accio.core.workflow - INFO - Processing contig analysis results
+2026-11-05 16:55:22,905 - accio.core.workflow - INFO - Processing plasmid analysis results
+2026-11-05 16:55:22,923 - accio.core.workflow - INFO - Filtered to 10 plasmids with matching replicon types
+2026-11-05 16:55:22,923 - accio.core.workflow - INFO - Found 10 plasmids with BLAST matches
+2026-11-05 16:55:22,923 - accio.core.workflow - INFO - Assigning contigs to plasmids
+2026-11-05 16:55:22,923 - accio.core.workflow - INFO - Processing 1 circular contigs
+2026-11-05 16:55:24,116 - accio.core.assignment - INFO - Starting assignment of 10 plasmids to 1 contigs
+2026-11-05 16:55:24,116 - accio.core.assignment - INFO - Assigned plasmid NZ_CP093504.1 with 1 contigs
+2026-11-05 16:55:24,125 - accio.core.assignment - INFO - Assignment complete: 1 plasmids assigned
+2026-11-05 16:55:24,125 - accio.core.workflow - INFO - Processing novel plasmid contigs
+2026-11-05 16:55:24,126 - accio.core.workflow - INFO - Generating output files
+2026-11-05 16:55:24,132 - accio.cli - INFO - ✅ Analysis completed successfully!
+2026-11-05 16:55:24,132 - accio.cli - INFO - 🧬 Assigned 1 plasmid(s)
+2026-11-05 16:55:24,132 - accio.cli - INFO -    └─ NZ_CP093504.1 (score: 0.989)
+2026-11-05 16:55:24,132 - accio.cli - INFO - 📁 Results written to: q2_out

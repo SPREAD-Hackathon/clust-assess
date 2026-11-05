@@ -1,0 +1,12 @@
+work/
+.nextflow/
+.nextflow.log*
+results/
+results_test/
+results_stub/
+db/
+dev/
+tools/accio/
+tools/install.log
+__pycache__/
+.pytest_cache/
