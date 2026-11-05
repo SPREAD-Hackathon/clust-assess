@@ -19,7 +19,7 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 
 # Tasks 
 - [ ] get dataset from galaxy onto climb - Nathan
-- [ ] PLSDB pling onto CLIMB 
+- [X] PLSDB pling onto CLIMB (`shared-team/pling_plsdb/`)
 - [ ] run ACCIO on Galaxy test dataset
 - [ ] split PLSDB file prior to ACCIO
     - [ ] like pling sourmash pre-filtering, separate it by community or subset PLSDB regionally 
