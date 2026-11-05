@@ -222,9 +222,5 @@ tests/                  pytest unit tests (fixtures from real ACCIO and Pling ou
 tools/                  install.sh, conda env files, Dockerfile
 ```
 
-Run the unit tests with `python -m pytest tests` inside the `clust-assess` env.
-
-Run artefacts are not committed (see `.gitignore`): `work/`, `.nextflow*`, `results*/`, `db/` and `test_data/`. Nextflow logs contain local paths, so leave them out of the repository.
-
 ---
 
