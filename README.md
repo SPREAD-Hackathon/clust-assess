@@ -34,4 +34,5 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 - [ ] interactive HTML output with plots for visualization - Effiong
 - [X] example output data structure - Gijs
 - [ ] slide crafting - Celia
+- [ ] extracting distance distributions for subcommunity/containment files and scripting
 
