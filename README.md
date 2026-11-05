@@ -17,6 +17,10 @@ A results file listing the within-subcommunity variability of each input plasmid
 
 If the within-subcommunity variability of the input plasmids is much lower than within-cluster variability, this indicates the plasmids may be closely related and part of an outbreak. If the within-subcommunity variability of the input plasmids is much higher than within-cluster variability, this indicates that the plasmids are not closely related. If the subcommunities for all input plasmids are different, then the plasmids are not related. 
 
+## Workflow diagram
+
+![Workflow diagram](workflow.png)
+
 # Tasks 
 - [ ] get dataset from galaxy onto climb - Nathan
 - [X] PLSDB pling onto CLIMB (`shared-team/pling_plsdb/`)
@@ -26,6 +30,6 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 - [ ] testing pling add with `-asyn` to not re-compute clusters and run fast 
 - [X] make GitHub page 
 - [ ] writing workflow - Robin
-- [ ] pull metadata for PLSDB to filter down to Denmark
+- [X] pull metadata for PLSDB to filter down to Denmark
 - [ ] interactive HTML output with plots for visualization - Effiong
 - [X] example output data structure - Gijs
