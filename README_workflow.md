@@ -46,20 +46,21 @@ flowchart LR
 
 ```bash
 git clone https://github.com/SPREAD-Hackathon/clust-assess.git && cd clust-assess
-bash tools/install.sh          # creates the `clust-assess` conda env and installs ACCIO (pinned commit)
+bash tools/install.sh          # creates the two conda envs (see Requirements) and prints the --*_env arguments
+ENVS="--clust_assess_env <core env> --mobsuite_env <mobsuite env> --amrfinder_env <mobsuite env>"
 
 # 1. assess suspected outbreak plasmids against an existing database
-nextflow run main.nf --input suspects.fasta --db /path/to/plsdb_accio_db
+nextflow run main.nf $ENVS --input suspects.fasta --db /path/to/plsdb_accio_db
 
 # 2. or build a database from reference plasmids and assess in one go
-nextflow run main.nf --mode all --refs references.fasta --input suspects.fasta --db_name my_db
+nextflow run main.nf $ENVS --mode all --refs references.fasta --input suspects.fasta --db_name my_db
 
 # checks
-nextflow run main.nf -profile standard,stub -stub-run    # wiring only, no tools needed (seconds)
-nextflow run main.nf -profile standard,test              # real run on the test data (~5 min)
+nextflow run main.nf $ENVS -profile standard,stub -stub-run    # wiring only, no tools needed (seconds)
+nextflow run main.nf $ENVS -profile standard,test              # real run on the test data (~5 min)
 ```
 
-Results are written to `results/` (change this with `--results_dir`).
+Results are written to `results/` (change this with `--results_dir`). On CLIMB, see [Running on CLIMB](#running-on-climb).
 
 ---
 
@@ -67,12 +68,12 @@ Results are written to `results/` (change this with `--results_dir`).
 
 - [Nextflow](https://www.nextflow.io/) ≥ 24.04. Developed with 26.04.1.
 - Conda or mamba (miniforge), for `tools/install.sh`.
-- Tools in the `clust-assess` env:
+- Tools in the core env (`tools/env-clust-assess.yml`):
 
   | tool | version |
   |---|---|
-  | ACCIO | 0.1.0, commit `6f6386a` |
-  | Pling | 3.0.2 |
+  | ACCIO | 0.1.0, commit `6f6386a` (editable install of `tools/accio`, see below) |
+  | Pling | 3.0.3 (bioconda build; `pling --version` prints 3.0.2) |
   | plasnet | 0.7.0 |
   | skani | 0.4.0 |
   | MUMmer | 4.0.1 |
@@ -80,8 +81,8 @@ Results are written to `results/` (change this with `--results_dir`).
   | BLAST+ | 2.17 |
   | Python | 3.11 |
 
-  The pipeline stops if `nucmer` is not MUMmer 4.
-- **MOB-suite** (3.1.9) and **AMRFinderPlus** (4.2.7) with their databases. ACCIO calls both. The `standard` profile reuses existing environments that already hold the databases; point it at yours with `--mobsuite_env` and `--amrfinder_env`. The `conda` profile instead uses `tools/env-clust-assess-full.yml`, a single environment containing everything; its databases are downloaded on first use.
+  The pipeline stops if `nucmer` is not MUMmer 4. `tools/install.sh` installs ACCIO from a clone at the pinned commit in editable mode. A regular `pip install git+https://github.com/mpgriffith/accio` is not enough: ACCIO's `setup.py` packages only `data/*.csv` and `data/*.txt`, so `data/repetitive.dna.fas` is missing and `accio create` fails.
+- **MOB-suite** (3.1.9) and **AMRFinderPlus** (4.2.7) with their databases, in a **second env** (`tools/env-mobsuite.yml`). ACCIO calls both. They cannot share the core env: MOB-suite 3.1.x needs `numpy<1.23.5` and Pling 3 needs `numpy>=1.26`. A single env silently falls back to Pling 2.0.2 (which has no `pling cluster` command) or to MOB-suite 3.0.0. Each process puts the core env first on `PATH`, then the MOB-suite and AMRFinder envs (`--clust_assess_env`, `--mobsuite_env`, `--amrfinder_env`).
 - Memory: plan for ≥ 8 GB. The test run peaked at 8 GB with up to 5 CPUs in use.
 
 ---
@@ -169,11 +170,27 @@ The **overall verdict** in `clust_assess.json` has three possible values:
 | profile | use |
 |---|---|
 | `standard` (default) | Local executor. Tools come from the conda envs set by `--clust_assess_env`, `--mobsuite_env` and `--amrfinder_env`. |
-| `conda` | Nextflow builds the environment from `tools/env-clust-assess-full.yml` |
 | `docker` | Runs every process in the image built from `tools/Dockerfile` (`docker build -t clust-assess:0.1.0 -f tools/Dockerfile tools/`) |
-| `climb` | CLIMB-BIG-DATA (`conf/climb.config`). Containerised, 4 CPUs. **To be finalised on CLIMB:** executor, work directory, image location. |
-| `test` | Builds a 33-plasmid test database and assesses 6 test plasmids (combine with `standard`) |
+| `climb` | CLIMB-BIG-DATA (`conf/climb.config`): each task runs as a Kubernetes pod, tools come from the two conda envs on `/shared/team`. See below. |
+| `test` | Builds a 33-plasmid test database and assesses 6 test plasmids (combine with `standard` or `climb`) |
 | `stub` | Placeholder data for `-stub-run`, to check the pipeline wiring without tools |
+
+### Running on CLIMB
+
+CLIMB notebooks have no Docker. Nextflow there runs each task as a Kubernetes pod. CLIMB keeps the pod settings (the `/shared/team` volume, node selector) in `/etc/nextflow.config`, which Nextflow does not load by itself; `-profile climb` includes it. The notebook itself has only 2 CPUs, so the `standard` profile (local executor) cannot start the 4-CPU processes.
+
+- Put both conda envs, the clone and the inputs under `/shared/team`. Pods cannot see `/home/jovyan`, so launch from the `/shared/team/...` path, not from `~/shared-team/...`.
+- The pod image defaults to the notebook's own image (`$JUPYTER_IMAGE_SPEC`, falling back to `ubuntu:24.04`); change it with `--climb_image`.
+
+```bash
+cd /shared/team/<dir>/clust-assess
+CORE_PREFIX=/shared/team/<dir>/env-core MOB_PREFIX=/shared/team/<dir>/env-mobsuite bash tools/install.sh
+nextflow run main.nf -profile climb --input suspects.fasta --db /shared/team/<dir>/<accio_db> \
+    --clust_assess_env /shared/team/<dir>/env-core \
+    --mobsuite_env /shared/team/<dir>/env-mobsuite --amrfinder_env /shared/team/<dir>/env-mobsuite
+```
+
+`tools/climb_test.sh` runs the unit tests, the stub run and the `test` profile on CLIMB and writes a report.
 
 ---
 
@@ -219,7 +236,8 @@ bin/clust_assess.py     command-line helper called by the processes
 src/clust_assess/       Python logic: ACCIO and Pling parsers, baseline selection, statistics, report
 tests/                  pytest unit tests (fixtures from real ACCIO and Pling output), stub data,
                         make_test_data.py (rebuilds test_data/ from public plasmids)
-tools/                  install.sh, conda env files, Dockerfile
+tools/                  install.sh, conda env files (core + MOB-suite), Dockerfile, climb_test.sh
+test_data/              33 reference + 6 input public plasmids for -profile test
 ```
 
 ---
