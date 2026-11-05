@@ -5,6 +5,8 @@ Assessing pling clusters of potentially related plasmids
 
 Given a set of plasmids that are suspected on being involved in an outbreak, are these plasmids more closely related to each other (lower intra-cluster variability) than others in public databases based on the pling subcommunity?
 
+This is a way to identify subgroups from within pling subcommunities, and is a threshold-free way of assessing plasmid clusters (aside from pling thresholds).
+
 ## Inputs
 
 A multi-fasta file containing the plasmids of interest, and a database (pling PLSDB)
