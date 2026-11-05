@@ -19,7 +19,19 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 
 ## Workflow diagram
 
-![Workflow diagram](workflow.png)
+```mermaid
+flowchart LR
+    IN["Input multi-FASTA<br/>(plasmids of interest)"] --> PQ["PREP_QUERIES<br/>split, rename"]
+    DB[("ACCIO / Pling database<br/>e.g. PLSDB")] --> VD[VERIFY_DB]
+    PQ --> AC["ACCIO_CALL<br/>assign each plasmid to its<br/>closest DB plasmid + subcommunity"]
+    VD --> AC
+    AC --> SM["SELECT_MEMBERS<br/>k closest DB plasmids<br/>of each subcommunity"]
+    SM --> PM["PLING_MEMBERS<br/>baseline: distances among<br/>those DB plasmids"]
+    PQ --> PI["PLING_INPUTS<br/>distances among<br/>the input plasmids"]
+    PM --> RE[REPORT]
+    PI --> RE
+    RE --> OUT["final_output.csv<br/>+ tables and JSON"]
+```
 
 # Tasks 
 - [X] get dataset from galaxy onto CLIMB and make pling database - Nathan
