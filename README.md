@@ -22,7 +22,7 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 ![Workflow diagram](workflow.png)
 
 # Tasks 
-- [ ] get dataset from galaxy onto climb - Nathan
+- [ ] get dataset from galaxy onto CLIMB and make pling database - Nathan
 - [X] PLSDB pling onto CLIMB (`shared-team/pling_plsdb/`)
 - [ ] run ACCIO on Galaxy test dataset
 - [ ] split PLSDB file prior to ACCIO
@@ -35,4 +35,5 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 - [X] example output data structure - Gijs
 - [ ] slide crafting - Celia (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
 - [ ] extracting distance distributions for subcommunity/containment files and scripting
+- [ ] pling database for Denmark plasmid subset
 
