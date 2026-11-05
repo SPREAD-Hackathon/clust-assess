@@ -1,0 +1,28 @@
+
+name: clust-assess-full
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.11
+  - pandas
+  - biopython
+  - scipy
+  - numpy
+  - intervaltree
+  - pysam
+  - blast
+  - mash=2.3
+  - mummer4
+  - samtools
+  - bwa
+  - minimap2
+  - skani
+  - pling
+  - plasnet
+  - mob_suite
+  - ncbi-amrfinderplus
+  - git
+  - pip
+  - pip:
+      - "accio @ git+https://github.com/mpgriffith/accio.git@6f6386ada75e0086a2d8d698271913d5b60547ad"
