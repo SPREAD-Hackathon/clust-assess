@@ -209,27 +209,13 @@ section>h2{margin-bottom:12px}
 
 <main>
 <div class="topbar" id="topbar" style="visibility:hidden">
-  <div class="f">Mode
-    <select id="mode" aria-label="Classification mode">
-      <option value="baseline">Reference baseline</option>
-      <option value="pct">Reference percentile</option>
-      <option value="fixed">Fixed thresholds</option>
-    </select></div>
-  <div class="f">Closer than ≥ <b id="pTl">50</b>% of reference
-    <input type="range" id="pT" min="1" max="99" step="1" value="50" aria-label="Reference percentile cut-off"></div>
-  <div class="f">DCJ ≤ <b id="dTl">3</b>
-    <input type="range" id="dT" min="0" max="10" step="1" value="3" aria-label="DCJ threshold"></div>
-  <div class="f">Containment ≥ <b id="cTl">0.70</b>
-    <input type="range" id="cT" min="0" max="1" step="0.05" value="0.7" aria-label="Containment threshold"></div>
-  <div class="f">Subcommunity <select id="fComm" aria-label="Filter by subcommunity"></select></div>
+  <div class="f" id="fCommW">Subcommunity <select id="fComm" aria-label="Filter by subcommunity"></select></div>
   <div class="f" id="fGeoW" hidden>Location <select id="fGeo" aria-label="Filter by location"></select></div>
   <div class="f" id="fHostW" hidden>Host <select id="fHost" aria-label="Filter by host"></select></div>
   <div class="f" id="fDateW" hidden>Year <input type="number" id="fFrom" style="width:76px" aria-label="From year"> – <input type="number" id="fTo" style="width:76px" aria-label="To year"></div>
-  <div class="f"><input type="search" id="fQ" placeholder="Search plasmid…" aria-label="Search plasmid name"></div>
-  <div class="chips" id="fCls" role="group" aria-label="Classification filter"></div>
-  <button id="btnClear">Clear filters</button>
+  <button id="btnClear" hidden>Clear filters</button>
   <div class="sp"></div>
-  <span class="f" id="shown"></span>
+  <span class="f" id="shown" hidden></span>
   <button id="btnPrint">🖨 Print / PDF</button>
 </div>
 
@@ -237,6 +223,23 @@ section>h2{margin-bottom:12px}
 <div id="fatal" role="alert"></div>
 
 <div id="app" style="display:none">
+
+<details class="panel fold" id="clsAdv" style="margin-top:14px"><summary>Classification (advanced) <span class="note" style="margin:0 0 0 8px">how each pair is labelled Outbreak-related, Intermediate or Unrelated; the default is the reference mean of its subcommunity</span></summary>
+<div class="toolrow" style="margin-top:10px">
+    <div class="f">Mode
+      <select id="mode" aria-label="Classification mode">
+        <option value="baseline">Reference baseline</option>
+        <option value="pct">Reference percentile</option>
+        <option value="fixed">Fixed thresholds</option>
+      </select></div>
+    <div class="f">Closer than ≥ <b id="pTl">50</b>% of reference
+      <input type="range" id="pT" min="1" max="99" step="1" value="50" aria-label="Reference percentile cut-off"></div>
+    <div class="f">DCJ ≤ <b id="dTl">3</b>
+      <input type="range" id="dT" min="0" max="10" step="1" value="3" aria-label="DCJ threshold"></div>
+    <div class="f">Containment ≥ <b id="cTl">0.70</b>
+      <input type="range" id="cT" min="0" max="1" step="0.05" value="0.7" aria-label="Containment threshold"></div>
+    <div class="chips" id="fCls" role="group" aria-label="Classification filter"></div>
+</div></details>
 
 <section id="summary">
   <h2>Summary</h2>
@@ -386,7 +389,7 @@ section>h2{margin-bottom:12px}
 
 <section id="pairs">
   <h2>Pair explorer</h2>
-  <div class="toolrow"><button id="btnExport">⬇ Export view (CSV)</button><button id="btnExportOb">⬇ Export outbreak-related (CSV)</button></div>
+  <div class="toolrow"><input type="search" id="fQ" placeholder="Search plasmid…" aria-label="Search plasmid name" title="Filters the whole report to the pairs of this plasmid"><button id="btnExport">⬇ Export view (CSV)</button><button id="btnExportOb">⬇ Export outbreak-related (CSV)</button></div>
   <div class="panel tw"><div id="tblPairs"></div></div>
 </section>
 
@@ -1725,6 +1728,7 @@ function exportCSV(rows,name){
 /* ---------- orchestration ---------- */
 function update(){
   applyFilters();
+  { const on=!!(S.fComm||S.fQ.trim()||S.fGeo||S.fHost||S.fFrom!==''||S.fTo!==''||S.fCls.size<CLS.length); $('btnClear').hidden=!on; $('shown').hidden=!on; }
   computeStats();
   renderSummary();
   renderCITable();
@@ -1747,6 +1751,7 @@ function syncUI(){
 }
 function wire(){
   $('hmMetric').innerHTML='<option value="pos">Position in the reference (closer than %)</option>'+(S.has.dcj?'<option value="dcj">DCJ distance</option>':'');
+  $('fCommW').hidden=S.grps.length<2;
   $('fComm').innerHTML='<option value="">All subcommunities</option>'+S.grps.map(g=>`<option value="${esc(g.key)}">${esc(g.label)} (${g.n} pairs)</option>`).join('');
   $('fCls').innerHTML=CLS.map(c=>`<button class="chip" data-c="${c}" aria-pressed="true"><i style="background:var(${CLS_META[c].v})"></i>${c}</button>`).join('');
   $('fCls').onclick=e=>{const b=e.target.closest('.chip'); if(!b)return; const c=b.dataset.c; S.fCls.has(c)?S.fCls.delete(c):S.fCls.add(c); syncUI(); update();};

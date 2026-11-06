@@ -182,12 +182,15 @@ process REPORT {
 // The reference is rebuilt from this run's baseline/*.member_pairs.tsv (censored pairs dropped); if that
 // gives nothing, the report uses the reference bundled in html_report/reference. Optional: a failure here
 // never stops the run (errorStrategy 'ignore' in nextflow.config). Switch off with --html_report false.
+// The z-score background is the database's own pairs (db_distributions/within_pairs.tsv.gz) when DB_DISTRIBUTIONS ran.
+// Called from main.nf, which has both the ASSESS results and the DB_DISTRIBUTIONS output.
 process HTML_REPORT {
     publishDir "${params.results_dir}", mode: 'copy'
 
     input:
     path(final_output_ext)
     path(inputs_tsv)
+    path(within, stageAs: 'db_distributions/within_pairs.tsv.gz')   // empty placeholder when db_distributions is off or failed
     path(baselines, stageAs: 'baseline/*')
     path(report_dir, stageAs: 'html_report')
 
@@ -203,9 +206,9 @@ process HTML_REPORT {
       awk -F'\\t' -v sc="\$sc" 'NR>1 && \$4 ~ /^[0-9]+(\\.[0-9]+)?\$/ && \$5!="True" {print \$1"\\t"\$2"\\t"sc"\\t"\$4"\\t"((\$3 ~ /^[0-9]+(\\.[0-9]+)?\$/) ? \$3 : "NA")}' "\$f" >> reference.tsv
     done
     if [ "\$(wc -l < reference.tsv)" -gt 1 ]; then
-      CA_NOOPEN=1 sh html_report/make_report.sh ${final_output_ext} report.html reference.tsv ${inputs_tsv}
+      CA_NOOPEN=1 sh html_report/make_report.sh ${final_output_ext} report.html reference.tsv ${inputs_tsv} db_distributions/within_pairs.tsv.gz
     else
-      CA_NOOPEN=1 sh html_report/make_report.sh ${final_output_ext} report.html html_report/reference/reference_db.tsv.gz ${inputs_tsv}
+      CA_NOOPEN=1 sh html_report/make_report.sh ${final_output_ext} report.html html_report/reference/reference_db.tsv.gz ${inputs_tsv} db_distributions/within_pairs.tsv.gz
     fi
     """
 
@@ -250,10 +253,8 @@ workflow ASSESS {
            PLING_MEMBERS.out.baseline.flatten().collect().ifEmpty([]),
            VERIFY_DB.out.info)
 
-    if (params.html_report) {
-        HTML_REPORT(REPORT.out[1],
-                    REPORT.out[2],
-                    PLING_MEMBERS.out.baseline.flatten().collect().ifEmpty([]),
-                    file("${projectDir}/html_report", checkIfExists: true))
-    }
+    emit:
+    final_extended = REPORT.out[1]    // final_output_extended.csv
+    inputs_table   = REPORT.out[2]    // inputs.tsv
+    baselines      = PLING_MEMBERS.out.baseline.flatten().collect().ifEmpty([])
 }
