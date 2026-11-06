@@ -1259,6 +1259,7 @@ function drawHulls(cn,nodes){
 
 
 /* ---------- 3D network: drag to rotate, scroll to zoom, details pinned to the top-right corner ---------- */
+const lerpHex=(a,b,u)=>{ const ok=/^#[0-9a-f]{6}$/i; if(!ok.test(a)||!ok.test(b)) return b; const f=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)); const x=f(a), y=f(b); return '#'+x.map((v,i)=>Math.round(v+(y[i]-v)*u).toString(16).padStart(2,'0')).join(''); };   // shade between two colours
 const N3={st:null,raf:0}, NETLBL='#d9730d';   // distance labels on the network lines: a distinct colour instead of a larger font
 function show3d(on){
   $('chNet').style.display=on?'none':''; $('net3d').hidden=!on;
@@ -1315,13 +1316,13 @@ function render3d(nodes,edges,tipOf,opts){
     [['#d9534f',[1,0,0]],['#5cb85c',[0,1,0]],['#5b9bd5',[0,0,1]]].forEach(([c,[ax,ay,az]])=>{ const x1=ax*cyw+az*syw, z1=-ax*syw+az*cyw, y1=ay*cp-z1*sp; out.push(`<line x1="44" y1="${H-44}" x2="${44+x1*26}" y2="${H-44+y1*26}" stroke="${c}" stroke-width="2" opacity=".7"/>`); });
     const es=st.E.map((x,k)=>({x,k,z:(pr[x.a].z+pr[x.b].z)/2})).sort((u,v)=>v.z-u.z);
     es.forEach(({x,k})=>{ const A=pr[x.a], B=pr[x.b], e=x.e, near=(A.near+B.near)/2, hl=hv&&((hv.kind==='e'&&hv.k===k)||isAdj(x.a,x.b));
-      const col=e.close?t.text:'#b5b3a8', w=(.8+4.4*e.cl)*(.6+.6*near), op=(e.close?.4+.5*e.cl:.22+.4*e.cl)*(.45+.55*near)*(hv&&!hl?dim:1);
+      const col=lerpHex(t.panel,t.text,.2+.8*e.cl), w=(.8+4.4*e.cl)*(.6+.6*near), op=(.45+.5*e.cl)*(.45+.55*near)*(hv&&!hl?dim:1);   // shade, thickness: closer = darker and thicker
       out.push(`<line x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}" stroke="${col}" stroke-width="${(hl?w+1.6:w).toFixed(2)}" stroke-opacity="${hl?1:op.toFixed(2)}"${e.cross?' stroke-dasharray="6 4"':''} stroke-linecap="round"/>`);
       if(e.close) out.push(`<line data-e="${k}" x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}" stroke="transparent" stroke-width="11" style="cursor:pointer"/>`);
       if(opts.showE&&e.lbl) out.push(`<text x="${((A.x+B.x)/2).toFixed(1)}" y="${((A.y+B.y)/2-3).toFixed(1)}" font-size="10" font-weight="600" text-anchor="middle" fill="${NETLBL}" stroke="${t.panel}" stroke-width="3" paint-order="stroke" opacity="${(.4+.6*near).toFixed(2)}">${esc(e.lbl)}</text>`); });
     const ns=nodes.map((x,i)=>({x,i,z:pr[i].z})).sort((u,v)=>v.z-u.z);
     ns.forEach(({x,i})=>{ const q=pr[i], r=(x.k==='ref'?6:4.5+11*x.cl)*q.f*Math.min(1.5,Math.max(.75,st.zoom)), on=!hv||i===hn||(hn>=0&&adj.has(i)), op=(.5+.5*q.near)*(on?1:dim);
-      const fill=x.k==='ref'?x.color+'88':x.color, stroke=x.ring||(x.k==='ref'?x.color:t.panel);
+      const fill=x.k==='ref'?x.color+'88':lerpHex(t.panel,x.color,.3+.7*x.cl), stroke=x.ring||(x.k==='ref'?x.color:t.panel);
       out.push(`<circle data-n="${i}" cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${x.ring?3:1.6}" opacity="${op.toFixed(2)}" style="cursor:pointer"/>`);
       if(opts.showN||i===hn) out.push(`<text x="${(q.x+r+4).toFixed(1)}" y="${(q.y+4).toFixed(1)}" font-size="11" fill="${x.k==='ref'?t.muted:t.text}" stroke="${t.panel}" stroke-width="3" paint-order="stroke" opacity="${(op*.9).toFixed(2)}" pointer-events="none">${esc(x.name)}</text>`); });
     svg.innerHTML=out.join('');
@@ -1386,7 +1387,7 @@ function renderNetClose(){
     ['What is drawn','How to use it','Reference']];
   const showN=nodes.length<=60, showE=$('nwLbl').checked&&nClose<=40;
   const kitem=(sw,tx)=>keyItem(sw,tx);
-  $('nwKey').innerHTML=[kitem(`<i class="ln" style="border-top:4px solid ${t.text}"></i>`,'line thickness and ball size = closeness: thicker line = closer pair, bigger ball = closer to its nearest partner; dark = close pair; orange number = its distance'),kitem(lineSw('#c3c2b7','solid'),"faint grey line = within Pling's threshold, not close"),
+  $('nwKey').innerHTML=[kitem(`<i class="ln" style="border-top:4px solid ${t.text}"></i>`,'closeness: a darker, thicker line is a closer pair; a darker, bigger ball is closer to its nearest partner; orange number = its distance'),
     ...(refG.size?[kitem(lineSw(t.text,'dashed'),'dashed line = input–reference pair'),kitem(`<i class="sw" style="background:${REFC};border:1.5px solid ${REFB}"></i>`,'light node = reference plasmid')]:[]),
     kitem(`<i class="sw" style="background:${catColor(0)}"></i><i class="sw" style="background:${catColor(1)}"></i>`,'node colour = close group (drag to rotate, scroll to zoom)'),kitem('<i class="sw" style="background:#b8bcc4"></i>','grey node = in no close group'),
     ...(many?[kitem('<i class="sw" style="background:#fff;border:3px solid '+catColor(0)+'"></i>','node ring = subcommunity')]:[]),
