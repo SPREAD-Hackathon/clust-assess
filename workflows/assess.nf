@@ -187,6 +187,7 @@ process HTML_REPORT {
 
     input:
     path(final_output_ext)
+    path(inputs_tsv)
     path(baselines, stageAs: 'baseline/*')
     path(report_dir, stageAs: 'html_report')
 
@@ -202,9 +203,9 @@ process HTML_REPORT {
       awk -F'\\t' -v sc="\$sc" 'NR>1 && \$4 ~ /^[0-9]+(\\.[0-9]+)?\$/ && \$5!="True" {print \$1"\\t"\$2"\\t"sc"\\t"\$4}' "\$f" >> reference.tsv
     done
     if [ "\$(wc -l < reference.tsv)" -gt 1 ]; then
-      CA_NOOPEN=1 sh html_report/make_report.sh ${final_output_ext} report.html reference.tsv
+      CA_NOOPEN=1 sh html_report/make_report.sh ${final_output_ext} report.html reference.tsv ${inputs_tsv}
     else
-      CA_NOOPEN=1 sh html_report/make_report.sh ${final_output_ext} report.html
+      CA_NOOPEN=1 sh html_report/make_report.sh ${final_output_ext} report.html html_report/reference/reference_db.tsv.gz ${inputs_tsv}
     fi
     """
 
@@ -251,6 +252,7 @@ workflow ASSESS {
 
     if (params.html_report) {
         HTML_REPORT(REPORT.out[1],
+                    REPORT.out[2],
                     PLING_MEMBERS.out.baseline.flatten().collect().ifEmpty([]),
                     file("${projectDir}/html_report", checkIfExists: true))
     }

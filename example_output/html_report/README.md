@@ -1,9 +1,9 @@
 # Sample HTML report
 
-- `final_output_extended.csv`: a sample pipeline output (15 OXA-48 plasmids, 105 pairs). Its subcommunity columns were relabelled from `community_0_subcommunity_0` to `community_0_subcommunity_7129` so that the pairs match the bundled reference database (the subcommunity ids of one database build are not the ids of another).
-- `report.html`: the report built from it with the bundled reference database. Open it with a double-click.
+- `final_output_extended.csv` and `inputs.tsv`: a sample pipeline output (15 OXA-48 plasmids, 105 pairs). The pipeline placed them in `community_0_subcommunity_0` of its own database; the report places them in subcommunity 7129 of the bundled reference because their nearest database plasmid, `NZ_CP117991.1` (listed in `inputs.tsv`), belongs to it.
+- `report.html`: the report built from them with the bundled reference database. Open it with a double-click.
 
-Rebuild it from the repository root:
+Rebuild it from the repository root (`inputs.tsv` is picked up from the folder of the first file):
 
 ```
 sh html_report/make_report.sh example_output/html_report/final_output_extended.csv example_output/html_report/report.html

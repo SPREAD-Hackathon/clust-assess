@@ -16,7 +16,7 @@ html_report\make_report.bat                    # Windows (double-clicking it als
 sh html_report/make_report.sh results/final_output_extended.csv results/report.html
 ```
 
-Defaults are `results/final_output_extended.csv` and `results/report.html`. Exit code `0` = report written, `1` = failed (the reason is printed). With no arguments the report opens in the browser; with arguments it does not. Set `CA_NOOPEN=1` to never open it.
+Defaults are `results/final_output_extended.csv` and `results/report.html`. An optional fourth argument is the pipeline's `inputs.tsv`; by default `inputs.tsv` in the folder of the first file is used when it exists. Exit code `0` = report written, `1` = failed (the reason is printed). With no arguments the report opens in the browser; with arguments it does not. Set `CA_NOOPEN=1` to never open it.
 
 ## Input: `final_output_extended.csv`
 
@@ -27,12 +27,16 @@ The pipeline's main result (`;`, `,` or tab separated).
 | `Plasmid A`, `Plasmid B` | yes | the two plasmids compared |
 | `DCJ` | yes | Pling DCJ-Indel distance, `NA` rows are skipped |
 | `subcommunity_A`, `subcommunity_B` | recommended | subcommunity of each plasmid (`7129` or the full id, e.g. `community_0_subcommunity_7129`). A pair whose plasmids are in different subcommunities is not assessed |
-| `dcj_censored` | no | `True` = Pling did not compute the DCJ (containment above its threshold); these pairs are left out and counted |
+| `dcj_censored` | no | `True` = Pling did not compute the DCJ (containment above its threshold); these pairs are left out of the judgement, counted, and drawn grey in the DCJ heatmap |
 | `community` | no | older alternative to `subcommunity_A/B` |
 | `containment` | no | Pling containment **distance** (0 = fully contained, 1 = nothing shared); drawn as its own pairwise heatmap (not part of the judgement) |
 | `mash` | no | Mash distance; drawn as its own pairwise heatmap when present (not part of the judgement) |
 | `Plasmid A country` / `Plasmid B country`, `... host`, `... date` | no | metadata; each one unlocks its own section |
 | `community_DCJ`, `community_containment`, `same_subcommunity`, `subcommunity_status`, `p_tighter` | no | ignored: the reference pairs are the baseline |
+
+### Optional: `inputs.tsv`
+
+The pipeline's table of inputs. Each input's nearest database plasmid (`nearest_db_plasmid`, `nearest_db_dcj`, `nearest_db_containment`) is added as an input-to-reference pair when that plasmid is in the reference, so the reference plasmid shows in the heatmaps and the network. Those known plasmids also place the input in their subcommunity, which takes priority over the subcommunity names in the results file. This is how inputs assigned to `community_0_subcommunity_0` by the pipeline's database are judged against subcommunity 7129 of the bundled reference (when the nearest plasmid is in both).
 
 **Subcommunity ids belong to one database build.** If the file names subcommunities that are not in the bundled reference (for example `community_0_subcommunity_0` from another database), they are not assessed. When none can be assessed, the page says so and offers to judge them against the reference's only subcommunity anyway; use that only if the plasmids really belong to that group. A file with no subcommunity information at all is assigned to the reference's only subcommunity.
 

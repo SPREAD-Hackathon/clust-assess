@@ -2,11 +2,12 @@
 @echo off
 setlocal
 rem  Builds results\report.html from results\final_output_extended.csv and the reference database that ships with this folder (reference\). Nothing to install (uses PowerShell, built into Windows).
-rem  Double-click it, or call:  make_report.bat [final_output_extended.csv] [report.html] [reference_db.tsv(.gz)]
+rem  Double-click it, or call:  make_report.bat [final_output_extended.csv] [report.html] [reference_db.tsv(.gz)] [inputs.tsv]
 set "CA_SELF=%~f0"
 set "CA_CSV=%~1"
 set "CA_OUT=%~2"
 set "CA_REF=%~3"
+set "CA_INP=%~4"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "& ([scriptblock]::Create([IO.File]::ReadAllText($env:CA_SELF)))"
 if errorlevel 1 (
   if "%~1"=="" pause
@@ -21,6 +22,7 @@ try {
   $root = Split-Path -Parent $here
   $csv  = if ($env:CA_CSV) { [IO.Path]::GetFullPath($env:CA_CSV) } else { Join-Path (Join-Path $root 'results') 'final_output_extended.csv' }
   $ref  = if ($env:CA_REF) { [IO.Path]::GetFullPath($env:CA_REF) } else { Join-Path (Join-Path $here 'reference') 'reference_db.tsv.gz' }
+  $inp  = if ($env:CA_INP) { [IO.Path]::GetFullPath($env:CA_INP) } else { Join-Path (Split-Path -Parent $csv) 'inputs.tsv' }   # optional
   $out  = if ($env:CA_OUT) { [IO.Path]::GetFullPath($env:CA_OUT) } else { Join-Path (Join-Path $root 'results') 'report.html' }
   $page = Join-Path $here 'index.html'
   $lib  = Join-Path $here 'echarts.min.js'
@@ -43,10 +45,15 @@ try {
   $libTag = '<script src="echarts.min.js"></script>'
   $csvTag = '<script id="csv-data" type="text/csv"></script>'
   $refTag = '<script id="ref-data" type="text/csv"></script>'
+  $inpTag = '<script id="inputs-data" type="text/csv"></script>'
   if (-not $html.Contains($libTag) -or -not $html.Contains($csvTag) -or -not $html.Contains($refTag)) { throw 'index.html is missing its placeholder lines.' }
   $html = $html.Replace($libTag, "<script>`n$js`n</script>")
   $html = $html.Replace($csvTag, "<script id=`"csv-data`" type=`"text/csv`">`n$csvText`n</script>")
   $html = $html.Replace($refTag, "<script id=`"ref-data`" type=`"text/plain`" data-enc=`"gzip-base64`">`n$refB64`n</script>")
+  if ((Test-Path -LiteralPath $inp) -and $html.Contains($inpTag)) {
+    $inpText = [IO.File]::ReadAllText($inp, $utf8).TrimStart([char]0xFEFF)
+    if ($inpText.Trim()) { $html = $html.Replace($inpTag, "<script id=`"inputs-data`" type=`"text/csv`">`n$inpText`n</script>") }
+  }
   [IO.File]::WriteAllText($out, $html, $utf8)
   Write-Host "Created $out"
   if (-not $env:CA_CSV -and -not $env:CA_NOOPEN) { Start-Process -FilePath $out }
