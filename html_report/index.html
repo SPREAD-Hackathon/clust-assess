@@ -141,6 +141,7 @@ section>h2{margin-bottom:12px}
   <a href="#scatter" data-mod="scatter"><span class="st"></span>DCJ vs containment</a>
     <a href="#normal" data-mod="normal"><span class="st"></span>Distance distributions</a>
   <a href="#heatmap" data-mod="heatmap"><span class="st"></span>Pairwise heatmap</a>
+  <a href="#closeness" data-mod="closeness"><span class="st"></span>Closeness analysis</a>
   <a href="#delta" data-mod="delta"><span class="st"></span>Position in reference</a>
   <a href="#network" data-mod="network"><span class="st"></span>Plasmid network</a>
   <a href="#parallel" data-mod="parallel"><span class="st"></span>Parallel coordinates</a>
@@ -252,6 +253,16 @@ section>h2{margin-bottom:12px}
   <div class="panel"><h3>DCJ distance</h3><div id="chHeat" class="chart tall"></div></div>
   <div class="panel" id="hmPanC" style="margin-top:16px" hidden><h3>Containment</h3><div id="chHeatC" class="chart tall"></div></div>
   <div class="panel" id="hmPanM" style="margin-top:16px" hidden><h3>Mash distance</h3><div id="chHeatM" class="chart tall"></div></div>
+</section>
+
+<section id="closeness">
+  <h2 id="h-closeness">Closeness analysis</h2>
+  <div class="toolrow"><label class="f">Measure <select id="zMet" aria-label="Measure"></select></label>
+    <label class="f">Close when z ≤ <select id="zCut" aria-label="z-score cutoff"><option value="1">−1 (1 SD closer)</option><option value="1.5">−1.5</option><option value="2">−2</option></select></label>
+    <span class="note" id="zNote"></span></div>
+  <div class="panel"><h3>Input pairs against the background</h3><div id="chZdist" class="chart"></div></div>
+  <div class="panel tw" style="margin-top:16px"><h3>Close groups</h3><div id="tblGroups"></div></div>
+  <div class="panel tw" id="accioPan" style="margin-top:16px" hidden><h3>Assignment of the inputs (ACCIO)</h3><div id="tblAccio"></div></div>
 </section>
 
 <section id="delta">
@@ -544,7 +555,7 @@ function build(text, refText, inputsText){
   const has = {dcj:idx.dcj>=0, cont:idx.cont>=0, cd:idx.cd>=0, cc:idx.cc>=0, comm:idx.comm>=0, sub:idx.sa>=0||idx.sb>=0};
   S.has = has; S.suppliedBaselines = suppliedBaselines;
   buildRef(refText);
-  S.censPairs=[]; S.fromInputs=0; S.byRef=0;
+  S.censPairs=[]; S.fromInputs=0; S.byRef=0; S.inputsTbl=[];
   if(!has.dcj) bad('The results file needs a DCJ column: the reference database holds DCJ distances only.');
   if(has.cont){ has.cont=false; S.contIgnored=true; }   // no reference for containment, so it cannot be judged
   const MD = {}; S.hasMd = {}; for(const f of Object.keys(META_BASES)){ MD[f] = metaIdx(p.header, META_BASES[f]); S.hasMd[f] = MD[f].a>=0 || MD[f].b>=0 || MD[f].s>=0; }
@@ -574,6 +585,8 @@ function build(text, refText, inputsText){
   });
   if(inputsText){   // inputs.tsv: each input's nearest database plasmid, as an input-to-reference pair (only when that plasmid is in the reference)
     const q=parseCSV(inputsText), ci=n=>q.header.findIndex(h=>key(h)===n), ii=ci('inputid'), nn=ci('nearestdbplasmid'), nd=ci('nearestdbdcj'), nc=ci('nearestdbcontainment'), ns=ci('subcommunity');
+    { const g=n=>ci(n), c={st:g('status'),rs:g('reason'),rf:g('refplasmid'),sc:g('subcommunity'),ac:g('winaccioscore')>=0?g('winaccioscore'):g('accioscore'),ms:g('mashscore')};
+      S.inputsTbl=ii<0?[]:q.rows.map(r=>({id:(r[ii]||'').trim(),status:(r[c.st]||'').trim(),reason:(r[c.rs]||'').trim(),ref:(r[c.rf]||'').trim(),sub:(r[c.sc]||'').trim(),accio:parseFloat(r[c.ac]),mash:parseFloat(r[c.ms]),dcj:nd>=0?parseFloat(r[nd]):NaN,cont:nc>=0?parseFloat(r[nc]):NaN})).filter(o=>o.id); }
     if(ii>=0&&nn>=0&&nd>=0) q.rows.forEach((r,ln)=>{ const a=(r[ii]||'').trim(), b=(r[nn]||'').trim(), dv=num(r[nd]||''); if(!a||!b||a===b||!Number.isFinite(dv)||!S.ref.set.has(b)) return;
       const k=[a,b].sort().join('\u0000'); if(seen.has(k)) return; seen.add(k); S.fromInputs++;
       const sa=ns>=0?nz(r[ns]||''):'', o={a,b,dcj:dv,cd:NaN,cont:0,cc:NaN,contRaw:nc>=0?num(r[nc]||''):NaN,mashRaw:NaN,sa,sb:'',cens:false,mixed:false,gc:sa,line:ln+2,mg:{}};
@@ -859,6 +872,12 @@ function clusterOrder(names,dm){
     const m=cl[bi].concat(cl[bj]); cl.splice(bj,1); cl.splice(bi,1); cl.push(m); }
   return cl[0];
 }
+// z = (d - mean) / SD against a background of the same measure: the subcommunity's reference pairs when the reference has it
+// (DCJ, and containment when the reference table has that column), otherwise the input pairs of the subcommunity themselves.
+const ZL=[1,1.5,2], zMeasure=kind=>kind==='cont'?'cont':kind==='mash'?'mash':'dcj', zVal=(r,m)=>m==='cont'?r.contRaw:m==='mash'?r.mashRaw:r.dcj;
+const zBack=(g,m)=>{ const rg=g&&g.ref; if(rg&&m==='dcj'&&Number.isFinite(rg.sd)&&rg.sd>0) return {mean:rg.md,sd:rg.sd,src:'reference'};
+  if(rg&&m==='cont'&&Number.isFinite(rg.csd)&&rg.csd>0) return {mean:rg.cm,sd:rg.csd,src:'reference'};
+  const v=[...new Set((S.allRows||[]).filter(r=>r.grp===g))].map(r=>zVal(r,m)).filter(Number.isFinite); if(v.length<MIN_REF_PAIRS) return null; const mu=mean(v), sd=sdArr(v,mu); return sd>0?{mean:mu,sd,src:'your input pairs'}:null; };
 function renderHeat(){
   const t=T();
   if(!S.view.length){ empty('chHeat'); $('hmPanC').hidden=true; $('hmPanM').hidden=true; return; }
@@ -879,12 +898,6 @@ function renderHeat(){
   $('hmNote').textContent=`${ordered.length-nRef} input plasmids`+(capped?` (the ${MAXN} most-connected of ${S.plasmids.length})`:'')+(nRef?` + ${nRef} known reference plasmid${nRef===1?'':'s'} from your file (grey labels)`:'')+'. The same order is used in every heatmap: by DCJ (and containment, when present) similarity inside each subcommunity, so tight subgroups form blocks. Blank cells have no value in the data; grey cells are pairs for which Pling did not compute a DCJ. Dots (●, ●●, ●●●) mark pairs closer than the mean of the background by 1, 1.5 and 2 standard deviations (the cutoffs are listed under each colour bar).';
   const lab=ordered.map(x=>x.name), show=ordered.length<=70, bounds=[]; ordered.forEach((x,i)=>{ if(i&&x.g!==ordered[i-1].g) bounds.push({xAxis:i-.5}); });
   const lc=(v,i)=>ordered[i]&&ordered[i].ref?REFB:t.text, ramp=['#e9f0fb','#9dbfee','#4a86de','#173f82'];
-  // z = (d - mean) / SD against a background of the same measure: the subcommunity's reference pairs when the reference has it
-  // (DCJ, and containment when the reference table has that column), otherwise the input pairs of the subcommunity themselves.
-  const ZL=[1,1.5,2], zMeasure=kind=>kind==='cont'?'cont':kind==='mash'?'mash':'dcj', zVal=(r,m)=>m==='cont'?r.contRaw:m==='mash'?r.mashRaw:r.dcj;
-  const zBack=(g,m)=>{ const rg=g&&g.ref; if(rg&&m==='dcj'&&Number.isFinite(rg.sd)&&rg.sd>0) return {mean:rg.md,sd:rg.sd,src:'reference'};
-    if(rg&&m==='cont'&&Number.isFinite(rg.csd)&&rg.csd>0) return {mean:rg.cm,sd:rg.csd,src:'reference'};
-    const v=[...new Set((S.allRows||[]).filter(r=>r.grp===g))].map(r=>zVal(r,m)).filter(Number.isFinite); if(v.length<MIN_REF_PAIRS) return null; const mu=mean(v), sd=sdArr(v,mu); return sd>0?{mean:mu,sd,src:'your input pairs'}:null; };
   const hexRgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
   const rampAt=u=>{ const x=Math.min(1,Math.max(0,u))*(ramp.length-1), i=Math.min(ramp.length-2,Math.floor(x)), f=x-i, a=hexRgb(ramp[i]), b=hexRgb(ramp[i+1]); return '#'+a.map((v,k)=>Math.round(v+(b[k]-v)*f).toString(16).padStart(2,'0')).join(''); };
   // own colour bar (drawn as graphic): 0 at the top, dark = closer, with the Pling threshold marked
@@ -931,6 +944,60 @@ function renderHeat(){
   draw('chHeat',$('hmMetric').value||'pos')||empty('chHeat','No pairs among displayed plasmids.');
   [['hmPanC','chHeatC','cont'],['hmPanM','chHeatM','mash']].forEach(([pn,id,kind])=>{
     const has=!!S.hasRaw[kind]; $(pn).hidden=!has; if(has&&!draw(id,kind)) $(pn).hidden=true; });
+}
+
+
+/* ---------- closeness analysis: z-scores of the input pairs, close groups, ACCIO assignment (after the analyst's pairwise_insights / accio_report_insights) ---------- */
+const normCdf=x=>{ const t=1/(1+.2316419*Math.abs(x)), d=.3989423*Math.exp(-x*x/2), p=d*t*(.3193815+t*(-.3565638+t*(1.781478+t*(-1.821256+t*1.330274)))); return x>0?1-p:p; };
+const Z0=-3.5, ZS=.5, ZN=14;   // 14 bins of 0.5 SD from -3.5 to 3.5; the end bins collect the tails
+const zBin=z=>Math.min(ZN-1,Math.max(0,Math.floor((z-Z0)/ZS)));
+const zLab=k=>{ const v=Z0+k*ZS; return (v<0?'−':'')+Math.abs(v); };
+const ZMN={dcj:'DCJ',cont:'Containment',mash:'Mash'};
+function renderClose(){
+  const t=T(), sel=$('zMet'), mets=['dcj',...(S.hasRaw&&S.hasRaw.cont?['cont']:[]),...(S.hasRaw&&S.hasRaw.mash?['mash']:[])];
+  if(sel.dataset.n!==mets.join()){ sel.innerHTML=mets.map(m=>`<option value="${m}">${ZMN[m]}</option>`).join(''); sel.dataset.n=mets.join(); }
+  const m=sel.value||'dcj', c=+$('zCut').value||1, nm=ZMN[m];
+  renderAccio();
+  const zr=[], used=new Map();
+  S.view.forEach(r=>{ const g=r.grp; if(!g) return; if(!used.has(g)) used.set(g,zBack(g,m)); const b=used.get(g), v=zVal(r,m); if(b&&Number.isFinite(v)) zr.push({r,z:(v-b.mean)/b.sd,v}); });
+  if(!zr.length){ empty('chZdist','No background for this measure (it needs at least '+MIN_REF_PAIRS+' pairs).'); $('tblGroups').innerHTML=''; $('zNote').textContent=''; return; }
+  const nI=zr.length, close=zr.filter(o=>o.z<=-c), inp=new Array(ZN).fill(0); zr.forEach(o=>inp[zBin(o.z)]++);
+  const usedB=[...used].filter(([g,b])=>b), refOnly=m==='dcj'&&usedB.every(([g,b])=>b.src==='reference');
+  let bg, bgName;
+  if(refOnly){ bg=new Array(ZN).fill(0); let tot=0; usedB.forEach(([g,b])=>{ const h=g.ref.h; h.vals.forEach((v,i)=>{ bg[zBin((v-b.mean)/b.sd)]+=h.cnt[i]; tot+=h.cnt[i]; }); }); bg=bg.map(x=>x/tot); bgName='reference pairs'; }
+  else { bg=Array.from({length:ZN},(_,k)=>normCdf(Z0+(k+1)*ZS)-normCdf(Z0+k*ZS)); bg[0]=normCdf(Z0+ZS); bg[ZN-1]=1-normCdf(Z0+(ZN-1)*ZS); bgName=usedB.every(([g,b])=>b.src==='reference')?'normal curve (mean 0, SD 1)':'normal curve (the background is your own input pairs)'; }
+  const one=usedB.length===1?usedB[0][1]:null, cutTxt=one?` (${nm} ≤ ${fmt(one.mean-c*one.sd,3)})`:'';
+  $('zNote').textContent=`${close.length} of ${nI} input pairs (${(100*close.length/nI).toFixed(0)}%) have z ≤ −${c}${cutTxt}. Background: ${usedB.every(([g,b])=>b.src==='reference')?'the reference pairs of their subcommunity':usedB.every(([g,b])=>b.src!=='reference')?'the input pairs of their subcommunity':'reference pairs where available, otherwise input pairs'}.`;
+  const labs=Array.from({length:ZN},(_,k)=>zLab(k)), share=a=>a.map(x=>x/nI);
+  ch('chZdist').setOption(base({
+    grid:{left:58,right:24,top:36,bottom:64},
+    legend:{top:2,textStyle:{color:t.muted},data:['input pairs',bgName]},
+    tooltip:{...base().tooltip,trigger:'axis',axisPointer:{type:'shadow'},formatter:ps=>`<b>z from ${esc(ps[0].axisValue)} to ${fmt(+ps[0].axisValue.replace('−','-')+ZS,1)}</b><br>`+ps.map(q=>`${q.marker} ${esc(q.seriesName)}: ${fmt(100*q.value,1)}%`).join('<br>')+`<br><span style="opacity:.6">${inp[ps[0].dataIndex]} input pair(s)</span>`},
+    xAxis:{type:'category',data:labs,name:'z-score = (d − mean) / SD of the background (bin start; the end bins include the tails)',nameLocation:'middle',nameGap:34,nameTextStyle:{color:t.muted},axisLabel:{color:t.muted},axisLine:{lineStyle:{color:t.border}},axisTick:{show:false}},
+    yAxis:{type:'value',name:'share of pairs',nameTextStyle:{color:t.muted},axisLabel:{color:t.muted,formatter:v=>(100*v).toFixed(0)+'%'},splitLine:{lineStyle:{color:t.grid}}},
+    series:[{name:'input pairs',type:'bar',data:inp.map(x=>x/nI),itemStyle:{color:CAT[0]},barGap:'8%',
+        markArea:{silent:true,itemStyle:{color:'rgba(120,120,110,.14)'},label:{show:true,position:'insideTopLeft',color:t.muted,formatter:'close (z ≤ −'+c+')'},data:[[{xAxis:zLab(0)},{xAxis:zLab(Math.round((-c-Z0)/ZS)-1)}]]}},
+      {name:bgName,type:'bar',data:bg,itemStyle:{color:CAT[1]}}]
+  }),true);
+  // close groups: plasmids joined by close pairs (connected components)
+  const pairs=close.map(o=>({a:o.r.a,b:o.r.b,d:o.v,g:o.r.grp}));
+  S.cross.forEach(r=>{ const b=r.grp&&used.get(r.grp); const v=zVal(r,m); if(b&&Number.isFinite(v)&&(v-b.mean)/b.sd<=-c) pairs.push({a:r.a,b:r.b,d:v,g:r.grp}); });
+  const par=new Map(), fd=x=>{ while(par.get(x)!==x){ par.set(x,par.get(par.get(x))); x=par.get(x); } return x; };
+  pairs.forEach(q=>{ [q.a,q.b].forEach(n=>{ if(!par.has(n)) par.set(n,n); }); par.set(fd(q.a),fd(q.b)); });
+  const comps=new Map(); par.forEach((_,n)=>{ const r0=fd(n); (comps.get(r0)||comps.set(r0,{m:[],d:[],g:null}).get(r0)).m.push(n); });
+  pairs.forEach(q=>{ const o=comps.get(fd(q.a)); o.d.push(q.d); o.g=o.g||q.g; });
+  const inSet=n=>!S.ref.set.has(n), rowsG=[...comps.values()].sort((x,y)=>y.m.length-x.m.length);
+  const med=a=>{ const b=[...a].sort((x,y)=>x-y), h=b.length>>1; return b.length%2?b[h]:(b[h-1]+b[h])/2; };
+  $('tblGroups').innerHTML=rowsG.length?`<table><thead><tr><th>Group</th><th>Subcommunity</th><th>Plasmids</th><th>Inputs</th><th>Reference</th><th>Max ${esc(nm)}</th><th>Median ${esc(nm)}</th><th>Members</th></tr></thead><tbody>`+rowsG.map((o,k)=>{
+      const ni=o.m.filter(inSet).length, ms=o.m.sort(), shown=ms.slice(0,14).map(n=>`<span class="pn">${esc(n)}</span>`).join('')+(ms.length>14?` <span class="note">+${ms.length-14} more</span>`:'');
+      return `<tr><td>${k+1}</td><td>${esc(o.g?o.g.label:'')}</td><td>${o.m.length}</td><td>${ni}</td><td>${o.m.length-ni}</td><td>${fmt(Math.max(...o.d),3)}</td><td>${fmt(med(o.d),3)}</td><td>${shown}</td></tr>`; }).join('')+`</tbody></table>`
+    :`<p class="note">No pair is close at z ≤ −${c}.</p>`;
+}
+function renderAccio(){
+  const T0=S.inputsTbl||[]; $('accioPan').hidden=!T0.length; if(!T0.length) return;
+  const bar=v=>Number.isFinite(v)?`<span class="bar"><i style="width:${Math.round(100*Math.min(1,Math.max(0,v)))}%"></i></span>${fmt(v,3)}`:'—';
+  $('tblAccio').innerHTML=`<table><thead><tr><th>Input</th><th>ACCIO call</th><th>Reference plasmid</th><th>Subcommunity (pipeline)</th><th>ACCIO score</th><th>Mash score</th><th>DCJ to it</th><th>Containment to it</th></tr></thead><tbody>`
+    +T0.map(o=>`<tr><td>${esc(o.id)}</td><td>${esc(o.status||'')}${o.reason?` <span class="note">${esc(o.reason)}</span>`:''}</td><td>${esc(o.ref||'—')}</td><td>${esc(o.sub||'—')}</td><td>${bar(o.accio)}</td><td>${bar(o.mash)}</td><td>${Number.isFinite(o.dcj)?fmt(o.dcj,0):'—'}</td><td>${Number.isFinite(o.cont)?fmt(o.cont,3):'—'}</td></tr>`).join('')+`</tbody></table>`;
 }
 
 const closeKey=r=>(S.has.dcj?r.dcj*10:0)+(S.has.cont?(1-r.cont):0);
@@ -1304,7 +1371,7 @@ function update(){
   renderSummary();
   renderCITable();
   tPl.set(S.plasmids); tPairs.set(S.view);
-  renderScatter(); renderDelta(); renderNormals(); renderHeat(); renderNet(); renderParallel();
+  renderScatter(); renderDelta(); renderNormals(); renderHeat(); renderClose(); renderNet(); renderParallel();
   renderMetaField('geo'); renderMetaField('host'); renderDates();
   $('fComm').value=S.fComm;
 }
@@ -1336,6 +1403,7 @@ function wire(){
   $('btnExport').onclick=()=>exportCSV(S.view,`clust_assess_view_${S.meta.generated.slice(0,10)}.csv`);
   $('btnExportOb').onclick=()=>exportCSV(S.view.filter(r=>r.cls==='Outbreak-related'),`clust_assess_outbreak_${S.meta.generated.slice(0,10)}.csv`);
   ['scColor','scJit','scLbl','scRef'].forEach(i=>$(i).onchange=renderScatter);
+  ['zMet','zCut'].forEach(i=>$(i).onchange=renderClose);
   $('hmMetric').onchange=renderHeat; $('hmRef').onchange=renderHeat; ['nwRel','nwLbl','nwNN','nwLay','nwRef','nwX','nwCol'].forEach(i=>$(i).onchange=renderNet);
   $('posView').onchange=renderDelta; $('posBack').onclick=pdBack; $('posGrid').addEventListener('click',pdClick);
   { const grid=$('posGrid'), tip=document.createElement('div'); tip.id='posTip'; document.body.appendChild(tip);
@@ -1725,7 +1793,12 @@ Object.assign(INFO,{
 'delta':['Position of the input in the reference',"Where your input pairs fall compared with the known pairs of their subcommunity: the share of reference pairs each of your pairs is closer than. Two views of the same comparison: Rings (an overview per subcommunity) and Ranked pairs (every pair on one line).","Rings: the 10 sectors run clockwise from the closest tenth of the reference (top, green) to the farthest (red); a sector's area is the share of your pairs in that band, and the dashed circle is the 10% you would see if your pairs were no closer than the reference. The number in the middle is the average closer-than percentage (50% = no difference) with its 95% interval. Ranked pairs: each point is a pair, and the dashed diagonal is the no-difference line. Click a ring title, a sector or a point to drill down; the Back button moves up a level. Pairs that share a plasmid are not independent, so read it as a guide, not a test.","A threshold-free comparison with the reference that works the same way for every subcommunity, from the overview down to the individual pairs."],
 'deltaPlot':['Where the input pairs fall in the reference',"Rings (one per subcommunity) or ranked pairs: your pairs placed on the distribution of the known pairs of their subcommunity.","Beyond the dashed circle (or above the diagonal at the left) on the green side = closer than most known pairs; on the red side = looser. Click a ring title, a sector or a point to see the pairs; Back moves up a level.","It shows, subcommunity by subcommunity and pair by pair, how far your pairs sit from what is normal."]
 });
-const CHART_INFO={chHeat:'heatDcj',chHeatC:'heatCont',chHeatM:'heatMash',chGeoRef:'metaRef:geo',chHostRef:'metaRef:host',chRingA:'ringMain',chRingB:'ringNest',chNormAll:'normAll',chProfile:'profile',chHistD:'histD',chHistC:'histC',chDelta:'deltaPlot',chRank:'rank',chCommD:'commD',chCommC:'commC',chCommS:'commS',chForestD:'forestD',chForestC:'forestC',
+Object.assign(INFO,{
+  closeness:['Closeness analysis',"Which input pairs are unusually close, measured in standard deviations (z-scores) against a background of the same measure, and which plasmids form close groups.","z = (d − mean) / SD, with the mean and SD of the background. A pair is close when z ≤ −1 (or −1.5, −2): its distance is at least that many SD below the background mean. The background is the subcommunity's reference pairs when the reference has the measure (DCJ; containment when the reference table has it), otherwise the input pairs of the subcommunity themselves.","It complements the position in the reference: it says how far below the typical distance a pair is, and it groups the close pairs into sets of related plasmids."],
+  zdist:['Input pairs against the background',"The distribution of the input pairs' z-scores (blue) next to the background (orange). The shaded part is the close zone, z ≤ the chosen cutoff.","If the blue bars sit further left than the orange ones, the input pairs are closer than the background. Distances stop at 0, so very low z-scores may be out of reach when the background is tight. When the background is your own input pairs, the orange series is a standard normal curve for comparison only.","A shift to the left, with many pairs in the shaded zone, is the signature of an input set that is tighter than the background."],
+  groups:['Close groups',"Plasmids joined by close pairs (z ≤ the cutoff): each row is a connected set, with its size, how many are inputs and how many are reference plasmids, and the largest and median distance of the close pairs inside it.","Large groups with many inputs are the candidate clusters. Reference plasmids in a group show which known plasmids the inputs are close to.","It turns the pairwise picture into sets you can follow up."],
+  accio:['Assignment of the inputs (ACCIO)',"For every input: whether ACCIO placed it, the reference plasmid and subcommunity it was placed with, the ACCIO and Mash scores, and the DCJ and containment distance to that reference plasmid (from inputs.tsv).","Scores near 1 mean a close match. A call other than 'called' means the input was not placed, with the reason beside it.","The assignment decides which reference an input is judged against, so check it before trusting the rest."]});
+const CHART_INFO={chZdist:'zdist',tblGroups:'groups',tblAccio:'accio',chHeat:'heatDcj',chHeatC:'heatCont',chHeatM:'heatMash',chGeoRef:'metaRef:geo',chHostRef:'metaRef:host',chRingA:'ringMain',chRingB:'ringNest',chNormAll:'normAll',chProfile:'profile',chHistD:'histD',chHistC:'histC',chDelta:'deltaPlot',chRank:'rank',chCommD:'commD',chCommC:'commC',chCommS:'commS',chForestD:'forestD',chForestC:'forestC',
   tblComm:'commTable',chGeoBar:'metaBar:geo',chGeoConc:'metaConc:geo',chGeoMat:'metaMat:geo',chHostBar:'metaBar:host',chHostConc:'metaConc:host',chHostMat:'metaMat:host',
   chTimeline:'timeline',chDateSim:'dateSim',chYear:'yearBar'};
 const infoBtn=k=>` <button class="info" data-info="${k}" aria-label="Explain this analysis">i</button>`;
