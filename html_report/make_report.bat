@@ -1,12 +1,12 @@
 <# : batch portion
 @echo off
 setlocal
-rem  Builds results\report.html from results\final_output.csv and results\reference_db.tsv. Nothing to install (uses PowerShell, built into Windows).
-rem  Double-click it, or call:  make_report.bat [final_output.csv] [reference_db.tsv] [report.html]
+rem  Builds results\report.html from results\final_output.csv and the reference database that ships with this folder (reference\). Nothing to install (uses PowerShell, built into Windows).
+rem  Double-click it, or call:  make_report.bat [final_output.csv] [report.html] [reference_db.tsv(.gz)]
 set "CA_SELF=%~f0"
 set "CA_CSV=%~1"
-set "CA_REF=%~2"
-set "CA_OUT=%~3"
+set "CA_OUT=%~2"
+set "CA_REF=%~3"
 powershell -NoProfile -ExecutionPolicy Bypass -Command "& ([scriptblock]::Create([IO.File]::ReadAllText($env:CA_SELF)))"
 if errorlevel 1 (
   if "%~1"=="" pause
@@ -20,7 +20,7 @@ try {
   $here = Split-Path -Parent $env:CA_SELF
   $root = Split-Path -Parent $here
   $csv  = if ($env:CA_CSV) { [IO.Path]::GetFullPath($env:CA_CSV) } else { Join-Path (Join-Path $root 'results') 'final_output.csv' }
-  $ref  = if ($env:CA_REF) { [IO.Path]::GetFullPath($env:CA_REF) } else { Join-Path (Join-Path $root 'results') 'reference_db.tsv' }
+  $ref  = if ($env:CA_REF) { [IO.Path]::GetFullPath($env:CA_REF) } else { Join-Path (Join-Path $here 'reference') 'reference_db.tsv.gz' }
   $out  = if ($env:CA_OUT) { [IO.Path]::GetFullPath($env:CA_OUT) } else { Join-Path (Join-Path $root 'results') 'report.html' }
   $page = Join-Path $here 'index.html'
   $lib  = Join-Path $here 'echarts.min.js'
@@ -32,10 +32,12 @@ try {
   if (-not $csvText.Trim()) { throw "$csv is empty." }
   $refBytes = [IO.File]::ReadAllBytes($ref)
   if ($refBytes.Length -eq 0) { throw "$ref is empty." }
-  $ms = New-Object IO.MemoryStream
-  $gz = New-Object IO.Compression.GZipStream($ms, [IO.Compression.CompressionLevel]::Optimal)
-  $gz.Write($refBytes, 0, $refBytes.Length); $gz.Close()
-  $refB64 = [Convert]::ToBase64String($ms.ToArray())
+  if ($ref -like '*.gz') { $refB64 = [Convert]::ToBase64String($refBytes) } else {
+    $ms = New-Object IO.MemoryStream
+    $gz = New-Object IO.Compression.GZipStream($ms, [IO.Compression.CompressionLevel]::Optimal)
+    $gz.Write($refBytes, 0, $refBytes.Length); $gz.Close()
+    $refB64 = [Convert]::ToBase64String($ms.ToArray())
+  }
   $html = [IO.File]::ReadAllText($page, $utf8)
   $js   = [IO.File]::ReadAllText($lib,  $utf8).Replace('</script', '<\/script')
   $libTag = '<script src="echarts.min.js"></script>'

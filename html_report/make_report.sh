@@ -1,11 +1,11 @@
 #!/bin/sh
-# Builds results/report.html from results/final_output.csv and results/reference_db.tsv. Nothing to install (POSIX shell, tr, cat).
-# Run it, or call:  sh html_report/make_report.sh [final_output.csv] [reference_db.tsv] [report.html]
+# Builds results/report.html from results/final_output.csv and the reference database that ships with this folder (reference/). Nothing to install (POSIX shell, tr, cat).
+# Run it, or call:  sh html_report/make_report.sh [final_output.csv] [report.html] [reference_db.tsv(.gz)]
 HERE=$(cd "$(dirname "$0")" && pwd) || exit 1
 ROOT=$(dirname "$HERE")
 CSV=${1:-"$ROOT/results/final_output.csv"}
-REF=${2:-"$ROOT/results/reference_db.tsv"}
-OUT=${3:-"$ROOT/results/report.html"}
+OUT=${2:-"$ROOT/results/report.html"}
+REF=${3:-"$HERE/reference/reference_db.tsv.gz"}   # bundled; pass another table (plain or .gz) to override
 
 for f in "$CSV" "$REF" "$HERE/index.html" "$HERE/echarts.min.js"; do
   [ -f "$f" ] || { echo "ERROR: required file not found: $f" >&2; exit 1; }
@@ -21,7 +21,7 @@ tr -d '\r' < "$HERE/index.html" | while IFS= read -r line || [ -n "$line" ]; do
     '<script id="csv-data" type="text/csv"></script>')
       printf '<script id="csv-data" type="text/csv">\n'; cat "$CSV"; printf '\n</script>\n' ;;
     '<script id="ref-data" type="text/csv"></script>')
-      printf '<script id="ref-data" type="text/plain" data-enc="gzip-base64">\n'; gzip -9 -c "$REF" | base64 | tr -d '\n\r'; printf '\n</script>\n' ;;
+      printf '<script id="ref-data" type="text/plain" data-enc="gzip-base64">\n'; case "$REF" in *.gz) base64 < "$REF" ;; *) gzip -9 -c "$REF" | base64 ;; esac | tr -d '\n\r'; printf '\n</script>\n' ;;
     *) printf '%s\n' "$line" ;;
   esac
 done > "$OUT.tmp" && mv "$OUT.tmp" "$OUT"

@@ -331,7 +331,7 @@ section>h2{margin-bottom:12px}
   <div class="grid2">
     <div class="panel"><h3>Files</h3><table>
       <tr><td><b>final_output.csv</b></td><td>Your plasmid pairs: <span class="kbd">Plasmid A</span>, <span class="kbd">Plasmid B</span> and <span class="kbd">DCJ</span> are required. Optional <span class="kbd">containment</span> and <span class="kbd">mash</span> (Mash distance) columns are drawn as their own pairwise heatmaps but are not part of the judgement. <span class="kbd">community_DCJ</span> and <span class="kbd">community_containment</span> are ignored.</td></tr>
-      <tr><td><b>reference_db.tsv</b></td><td>The pling pair table of the subcommunity your plasmids belong to (plasmid_1, plasmid_2, subcommunity, dcj). Its pairs are the yardstick and their mean DCJ is the baseline.</td></tr>
+      <tr><td><b>Reference database</b></td><td>Part of the report builder (<span class="kbd">html_report/reference</span>): the pling pair table of a subcommunity (plasmid_1, plasmid_2, subcommunity, dcj). Its pairs are the yardstick and their mean DCJ is the baseline. Pairs of a subcommunity that is not in it are not assessed.</td></tr>
       <tr><td><b>Pair types</b></td><td>A pair with exactly one plasmid in the reference is a measured input–reference pair: it is shown in the network and the plasmid tables and is not part of the judgement. All other pairs are judged against the reference.</td></tr></table>
     </div>
     <div class="panel"><h3>How a pair is judged</h3><table>
@@ -1913,7 +1913,7 @@ function initCollapsibles(){
       return `<tr><td><span class="kbd">${esc(n)}</span></td><td>${t}</td><td>${r}</td><td>${hit===null?'—':hit?'<span class="pass">✔</span>':'<span class="fail">✖</span>'}</td></tr>`;}).join('')}</tbody></table>`;
     if(kind==='missing') f.innerHTML=`<h2 style="margin-top:0">${isRef?'No reference database available':'No output file available'}</h2>
       <p><b>${esc(err.message)}</b></p>
-      <p>Place ${isRef?'the reference database':'the clust-assess results file'} named <span class="kbd">${esc(file)}</span> in the results folder and ${isRef?'rebuild the report':'reload'}.</p>
+      <p>${isRef?'The reference database is part of the report builder (<span class="kbd">html_report/reference</span>). Rebuild the report with <span class="kbd">html_report/make_report.sh</span>.':'Place the clust-assess results file named <span class="kbd">'+esc(file)+'</span> in the results folder and reload.'}</p>
       <p>Expected format (header row, <span class="kbd">;</span> <span class="kbd">,</span> or tab separated):</p>${schema}${isRef?REF_NOTE:OPT_NOTE}`;
     else if(kind==='blocked') f.innerHTML=`<h2 style="margin-top:0">Cannot read ${esc(file)} from disk</h2>
       <p>This page was opened directly from disk (<span class="kbd">file://</span>), and browsers do not let a page read another local file. Either:</p>

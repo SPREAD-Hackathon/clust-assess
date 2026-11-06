@@ -1,8 +1,8 @@
 # Interactive HTML report
 
-Turns the pipeline's `final_output.csv` and the reference pair table of the input's subcommunity into one self-contained `report.html`. It needs no Python, no internet and no server, and opens with a double-click (it can also be emailed). The reference table is embedded compressed, so a 17 MB table adds about 2 MB to the report. Opening it needs a current browser (Chrome, Edge, Firefox or Safari 16.4+).
+Turns the pipeline's `final_output.csv` into one self-contained `report.html`, comparing your plasmids with a reference database that **ships with this folder**. It needs no Python, no internet and no server, and opens with a double-click (it can also be emailed). The reference is embedded compressed, so it adds only about 2 MB to the report. Opening the report needs a current browser (Chrome, Edge, Firefox or Safari 16.4+).
 
-An example report is in [`../example_output/report.html`](../example_output/report.html).
+A sample input and the report built from it are in [`../example_output/html_report/`](../example_output/html_report/).
 
 ## Build it
 
@@ -12,15 +12,15 @@ Run from the repository root, after the pipeline has written `results/final_outp
 sh html_report/make_report.sh                  # Mac / Linux
 html_report\make_report.bat                    # Windows (double-clicking it also works)
 
-# explicit paths, e.g. inside a workflow step: <results> <reference> <report>
-sh html_report/make_report.sh results/final_output.csv results/reference_db.tsv results/report.html
+# explicit paths, e.g. inside a workflow step: <final_output.csv> <report.html>
+sh html_report/make_report.sh results/final_output.csv results/report.html
 ```
 
-Defaults are `results/final_output.csv`, `results/reference_db.tsv` and `results/report.html`. Exit code `0` = report written, `1` = failed (the reason is printed). With no arguments the report opens in the browser; with arguments it does not. Set `CA_NOOPEN=1` to never open it.
+Defaults are `results/final_output.csv` and `results/report.html`. Exit code `0` = report written, `1` = failed (the reason is printed). With no arguments the report opens in the browser; with arguments it does not. Set `CA_NOOPEN=1` to never open it.
 
-## Inputs
+## Input: `final_output.csv`
 
-**`final_output.csv`** (the pipeline's main result; `;`, `,` or tab separated)
+The pipeline's main result (`;`, `,` or tab separated).
 
 | Column | Required | Meaning |
 |---|---|---|
@@ -34,21 +34,19 @@ Defaults are `results/final_output.csv`, `results/reference_db.tsv` and `results
 
 A pair with exactly one plasmid in the reference is treated as a measured input-to-reference pair: it is shown in the network and the plasmid tables and is not part of the judgement.
 
-**`reference_db.tsv`** (tab separated): the Pling pair table of the subcommunity (or subcommunities) of the input, one row per pair of known plasmids.
+## The reference database (part of the program)
 
-| Column | Required | Meaning |
-|---|---|---|
-| `plasmid_1`, `plasmid_2` | yes | the two plasmids of the pair |
-| `subcommunity` | yes (or `community`) | e.g. `community_0_subcommunity_7129` |
-| `community` | no | the Pling community of the subcommunity |
-| `dcj` | yes | DCJ distance, >= 0 |
-| `containment` | no | read but not used (NA in the current table) |
+`reference/reference_db.tsv.gz` is the Pling pair table of the reference subcommunity: community 0, subcommunity 7129, 730 plasmids and 230,842 pairs, DCJ only. Users do not supply it.
+
+- **Coverage:** a subcommunity that is not in the bundled table, or whose reference has fewer than 10 pairs, is not assessed and is listed in the Summary.
+- **Format** (tab separated, plain or `.gz`): `plasmid_1`, `plasmid_2`, `subcommunity` (or `community`), `dcj` (>= 0); `community` and `containment` are optional.
+- **To update or extend it:** replace `reference/reference_db.tsv.gz` with a table in the same format (it can hold several subcommunities), or pass another table as a third argument: `sh html_report/make_report.sh results/final_output.csv results/report.html my_reference.tsv`.
 
 ## How the report judges the input
 
 Within each subcommunity, the DCJ distribution of its known pairs is the yardstick. Each input pair is placed on it and given a "closer than X% of reference pairs" value; each subcommunity gets the average with a 95% interval (a plasmid-level bootstrap), where 50% means no difference from the reference. The classification mode (reference mean by default, a percentile, or fixed thresholds) is secondary: about half of the pairs are "closer than the mean" even when the input is no different from the reference.
 
-A subcommunity that is missing from the reference, or whose reference has fewer than 10 pairs, is not assessed and is listed in the Summary. A reference whose 95th-percentile DCJ is above 25 is flagged as broad.
+A reference whose 95th-percentile DCJ is above 25 is flagged as broad.
 
 ## What is in the report
 
@@ -57,13 +55,14 @@ Summary (checks, key figures), Distance distributions by subcommunity (with a De
 ## Files
 
 ```
-index.html        page template (all charts and logic)
-echarts.min.js    chart library (ECharts 5.5), embedded into the report
-make_report.sh    builder for Mac / Linux (POSIX shell)
-make_report.bat   builder for Windows (PowerShell, built into Windows)
+index.html                        page template (all charts and logic)
+echarts.min.js                    chart library (ECharts 5.5), embedded into the report
+make_report.sh                    builder for Mac / Linux (POSIX shell)
+make_report.bat                   builder for Windows (PowerShell, built into Windows)
+reference/reference_db.tsv.gz     bundled reference database
 ```
 
-## Notes and follow-ups
+## Follow-ups
 
-- The reference table is the one named in the Input section; the pipeline's own `baseline/*.member_pairs.tsv` files have the columns `a`, `b`, `containment`, `dcj`, `dcj_censored` and carry the subcommunity in the file name. Feeding them straight to the report needs a small step that combines them into one table with a `subcommunity` column (or an extension of the parser).
+- The pipeline's own `baseline/*.member_pairs.tsv` files have the columns `a`, `b`, `containment`, `dcj`, `dcj_censored` and carry the subcommunity in the file name. Building the reference from them for other subcommunities needs a small step that combines them into one table with a `subcommunity` column (or an extension of the parser).
 - Containment and Mash are shown as supplied; the reference currently holds DCJ only, so there is no baseline for them.
