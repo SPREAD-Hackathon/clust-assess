@@ -61,11 +61,13 @@ process SELECT_MEMBERS {
 
     input:
     tuple val(sc), val(qids), path(fastas)
+    path(all_inputs, stageAs: 'all_inputs/*')    // every input, called or not: none of them may be in a baseline
     path(db)
     path(_verified)
 
     output:
-    tuple val(sc), path("${sc}.members.tsv"), path('members/*.fasta'), emit: members
+    // arity 0..*: every candidate can be a copy of an input (then left out), leaving no members
+    tuple val(sc), path("${sc}.members.tsv"), path('members/*.fasta', arity: '0..*'), emit: members
 
     script:
     """
@@ -74,7 +76,8 @@ process SELECT_MEMBERS {
     mash sketch -i -o candidates candidates.fasta > /dev/null 2>&1
     mash dist candidates.msh ${fastas} > mash.tsv
     clust_assess.py select-members --candidates candidates.tsv --candidates-fasta candidates.fasta --mash mash.tsv \
-        --queries ${qids.join(' ')} --k ${params.k_closest} --outdir members --table ${sc}.members.tsv
+        --queries ${qids.join(' ')} --k ${params.k_closest} --outdir members --table ${sc}.members.tsv \
+        --query-fastas all_inputs/* ${params.exclude_input_copies ? '' : '--keep-input-copies'}
     """
 
     stub:
@@ -88,29 +91,39 @@ process SELECT_MEMBERS {
     """
 }
 
+// One Pling run on the baseline members plus the inputs of this subcommunity. Pling scores every pair on its
+// own, so the member-member distances are the same as in a members-only run; the input-member pairs are the
+// inputs' distances to the database (input-input pairs are dropped here, PLING_INPUTS has them).
 process PLING_MEMBERS {
     tag "${sc}"
-    publishDir "${params.results_dir}/baseline", mode: 'copy', pattern: '*.member_pairs.tsv'
+    publishDir "${params.results_dir}/baseline", mode: 'copy', pattern: '*_pairs.tsv'
 
     input:
-    tuple val(sc), path(members_tsv), path(member_fastas, stageAs: 'members/*')
+    tuple val(sc), path(members_tsv), path(member_fastas, stageAs: 'members/*'), path(query_fastas, stageAs: 'queries/*')
 
     output:
-    tuple path(members_tsv), path("${sc}.member_pairs.tsv"), emit: baseline
+    tuple path(members_tsv), path("${sc}.member_pairs.tsv"), path("${sc}.input_db_pairs.tsv"), emit: baseline
 
     script:
+    def dirs = params.input_db_distances ? 'members queries' : 'members'
     """
-    for f in members/*.fasta; do echo "\$PWD/\$f"; done > genomes.txt
-    if [ \$(wc -l < genomes.txt) -ge 2 ]; then
+    for d in ${dirs}; do for f in \$d/*.fasta; do if [ -e "\$f" ]; then echo "\$PWD/\$f"; fi; done; done > genomes.txt
+    n_members=\$(grep -c '/members/' genomes.txt || true)
+    if [ "\$n_members" -ge 1 ] && [ \$(wc -l < genomes.txt) -ge 2 ]; then
         pling cluster align genomes.txt pling_out --containment_distance ${params.containment} --dcj ${params.dcj} \
             --cores ${task.cpus} ${params.pling_args} > pling.log 2>&1 || { tail -30 pling.log >&2; exit 1; }
     fi
-    clust_assess.py pairs --pling-dir pling_out --genomes genomes.txt --out ${sc}.member_pairs.tsv
+    clust_assess.py pairs --pling-dir pling_out --genomes genomes.txt --out ${sc}.member_pairs.tsv \
+        --out-query-pairs ${sc}.input_db_pairs.tsv
     """
 
     stub:
     """
     printf 'a\\tb\\tcontainment\\tdcj\\tdcj_censored\\nm1\\tm2\\t0.2\\t3\\tFalse\\nm1\\tm3\\t0.3\\t5\\tFalse\\nm2\\tm3\\t0.25\\t4\\tFalse\\n' > ${sc}.member_pairs.tsv
+    printf 'query_id\\tdb_plasmid\\tcontainment\\tdcj\\tdcj_censored\\n' > ${sc}.input_db_pairs.tsv
+    for f in queries/*.fasta; do
+        printf '%s\\tm1\\t0.1\\t2\\tFalse\\n' "\$(basename "\$f" .fasta)" >> ${sc}.input_db_pairs.tsv
+    done
     """
 }
 
@@ -163,6 +176,8 @@ process REPORT {
     script:
     def p = groovy.json.JsonOutput.toJson([containment: params.containment, dcj: params.dcj, k_closest: params.k_closest,
                                            n_resample: params.n_resample, alpha: params.alpha, seed: params.seed,
+                                           exclude_input_copies: params.exclude_input_copies,
+                                           input_db_distances: params.input_db_distances,
                                            db: params.mode == 'assess' ? params.db : "${params.db_outdir}/${params.db_name}"])
     """
     echo '${p}' > params.json
@@ -203,8 +218,8 @@ workflow ASSESS {
             tuple(sc, sorted.collect { x -> x[0] }, sorted.collect { x -> x[1] })
         }
 
-    SELECT_MEMBERS(by_subcommunity, db, VERIFY_DB.out.info)
-    PLING_MEMBERS(SELECT_MEMBERS.out.members)
+    SELECT_MEMBERS(by_subcommunity, PREP_QUERIES.out.fastas.collect(), db, VERIFY_DB.out.info)
+    PLING_MEMBERS(SELECT_MEMBERS.out.members.join(by_subcommunity.map { sc, _qids, fastas -> tuple(sc, fastas) }))
     PLING_INPUTS(PREP_QUERIES.out.fastas)
 
     REPORT(PREP_QUERIES.out.table,

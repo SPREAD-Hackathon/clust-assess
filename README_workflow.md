@@ -21,7 +21,7 @@ flowchart LR
     PQ --> AC["ACCIO_CALL<br/>assign each plasmid to its<br/>closest DB plasmid + subcommunity"]
     VD --> AC
     AC --> SM["SELECT_MEMBERS<br/>k closest DB plasmids<br/>of each subcommunity"]
-    SM --> PM["PLING_MEMBERS<br/>baseline: distances among<br/>those DB plasmids"]
+    SM --> PM["PLING_MEMBERS<br/>baseline: distances among<br/>those DB plasmids, and from<br/>each input to them"]
     PQ --> PI["PLING_INPUTS<br/>distances among<br/>the input plasmids"]
     PM --> RE[REPORT]
     PI --> RE
@@ -30,7 +30,7 @@ flowchart LR
 ```
 
 1. **Assign:** ACCIO matches each input plasmid to the most similar plasmid in the reference database. It scores BLAST identity and coverage, Mash containment, synteny and length. This places the input in that plasmid's Pling **subcommunity**.
-2. **Baseline:** for every subcommunity that receives an input, the k database plasmids closest to the inputs (Mash, default k = 20) are compared with each other using Pling (containment and DCJ-Indel distances).
+2. **Baseline:** for every subcommunity that receives an input, the k database plasmids closest to the inputs (Mash, default k = 20) are compared with each other using Pling (containment and DCJ-Indel distances). Database plasmids that *are* inputs (same sequence or same name) are left out, so the inputs are never compared with themselves. The same Pling run also gives each input's distances to those database plasmids, and so its nearest database plasmid.
 3. **Inputs:** Pling compares all input plasmids with each other, using the same thresholds.
 4. **Compare:** the inputs' pairwise distances are reported next to the baseline. A resampling test then asks how often random sets of database plasmids, the same size as the input set, are at least as tight as the inputs.
 5. **Describe the database** (`DB_DISTRIBUTIONS`, on by default): within-subcommunity and within-community distance distributions of the database's own Pling run, with figures. This shows how tight the database's subcommunities are, and which inputs could have no baseline at all. See [`db_distributions/`](#db_distributions).
@@ -126,11 +126,11 @@ other_NZ_CP039944.1;outbreak_CP067528.1;NA;NA;1;NA
 
 | file | content |
 |---|---|
-| `subcommunities.tsv` | One row per subcommunity hit by the inputs: number of inputs and of database plasmids, `median_dcj_inputs` versus `community_DCJ`, resampling p-values, and **status** |
-| `inputs.tsv` | One row per input plasmid: ACCIO call (`called` / `no_assignment` with reason), closest database plasmid, ACCIO and Mash scores, subcommunity |
+| `subcommunities.tsv` | One row per subcommunity hit by the inputs: number of inputs and of database plasmids (`n_members_excluded` = database copies of the inputs left out), `median_dcj_inputs` versus `community_DCJ`, `median_dcj_inputs_to_db`, resampling p-values, and **status** |
+| `inputs.tsv` | One row per input plasmid: ACCIO call (`called` / `no_assignment` with reason), ACCIO's closest database plasmid, ACCIO and Mash scores, subcommunity, and from Pling: `nearest_db_plasmid` with `nearest_db_dcj` / `nearest_db_containment` (smallest DCJ, then smallest containment, among the baseline plasmids), `median_dcj_to_db`, `n_db_compared`, and `in_db_as` (database plasmids that are this input) |
 | `final_output_extended.csv` | `final_output.csv`, plus the subcommunity of each plasmid, whether the DCJ was censored, the subcommunity status, and `p_tighter` |
 | `clust_assess.json` | All of the above plus an overall verdict, for the interactive HTML report |
-| `accio/`, `baseline/`, `inputs/`, `db_check/` | Intermediate results: ACCIO calls, baseline plasmids and their distances, input pairs, database check |
+| `accio/`, `baseline/`, `inputs/`, `db_check/` | Intermediate results: ACCIO calls, baseline plasmids (`<subcommunity>.members.tsv`, with `copy_of_input` for left-out copies) and their distances (`<subcommunity>.member_pairs.tsv`), input-to-database distances (`<subcommunity>.input_db_pairs.tsv`), input pairs, database check |
 | `db_distributions/` | Distance distributions of the database itself (see below); turn off with `--db_distributions false` |
 | `runningstat/` | `software_versions.yml`, and Nextflow `execution.html`, `timeline.html`, `trace.txt` and `dag.html` |
 
@@ -188,6 +188,8 @@ The **overall verdict** in `clust_assess.json` has three possible values:
 | `--dcj` | `4` | Pling DCJ-Indel threshold |
 | `--k_closest` | `20` | Database plasmids per subcommunity used as the baseline, closest by Mash to the inputs (`0` = the whole subcommunity) |
 | `--baseline_members` | `all` | `all` = include plasmids that ACCIO de-duplicated; `representatives` = only the representative plasmids |
+| `--exclude_input_copies` | `true` | Leave database plasmids that are inputs (identical sequence, or same name) out of the baseline |
+| `--input_db_distances` | `true` | Run each subcommunity's inputs through Pling together with its baseline plasmids, for the input-to-database distances (`false` = baseline plasmids only, faster) |
 | `--n_resample` / `--alpha` / `--seed` | `1000` / `0.05` / `2026` | Resampling test |
 | `--db_outdir` / `--db_name` | `db/` / `clust_assess_db` | Where `build_db` writes the database |
 | `--db_distributions` | `true` | Write [`db_distributions/`](#db_distributions) |
@@ -235,7 +237,7 @@ Measured on the `test` profile: 33 reference plasmids and 6 input plasmids, on a
 | `ACCIO_BUILD` (33 references) | 2 min |
 | `ACCIO_CALL` (per input plasmid) | ~10 s (30 s when nothing matches) |
 | `PLING_INPUTS` (6 plasmids) | 28 s |
-| `PLING_MEMBERS` (≤ 10 plasmids per subcommunity) | 40–50 s |
+| `PLING_MEMBERS` (≤ 10 database plasmids + that subcommunity's inputs) | 35 s – 1.2 min |
 | everything else | seconds |
 
 Building a database from a large reference set takes far longer. The ACCIO paper reports ~1.5 h for 368 plasmids, so for PLSDB, build per community or region (e.g. Denmark) rather than all at once.
@@ -250,6 +252,7 @@ Building a database from a large reference set takes far longer. The ACCIO paper
 - **Two containment thresholds.** `accio create` uses Pling containment 0.3 to *define* subcommunities. The distances reported here use `--containment` (0.5), the same for inputs and baseline.
 - **Not every plasmid gets an ACCIO call.** ACCIO filters the database by the input's PlasmidFinder replicons, requires Mash ≥ 0.995 and score ≥ 0.80, and excludes plasmids under 10 kb. Uncalled plasmids are listed as `no_assignment` with a reason in `inputs.tsv`; they are never dropped. They still appear in `final_output.csv` with their distances to the other inputs.
 - **The baseline describes the inputs' neighbourhood.** It uses the k database plasmids *closest* to the inputs, not the whole subcommunity. Set `--k_closest 0` for the whole subcommunity.
+- **Inputs that are already in the database.** A database plasmid with exactly the same sequence as an input, or the same name, is the input itself: it is listed in `members.tsv` (`copy_of_input`) and `inputs.tsv` (`in_db_as`) but left out of the baseline. Near-identical plasmids stay in: they are real relatives. A copy that is rotated or reverse-complemented is not recognised. If the database was built from the inputs themselves, little or nothing may be left for the baseline (`no_baseline`): the database should hold the reference plasmids to compare with.
 - **Public data is biased** towards some countries, years and resistance genes. A `similar` result means "as related as what has already been sequenced and published", which says nothing about plasmids that were never sequenced.
 
 ---

@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
 
 import pandas as pd  
 
-from clust_assess import accio_io, db, pling_io, prep, report  # noqa: E402
+from clust_assess import accio_io, db, pling_io, prep, report, seqio  # noqa: E402
 
 
 def cmd_prep_queries(a):
@@ -40,7 +40,10 @@ def cmd_candidates(a):
 
 def cmd_select_members(a):
     cands = pd.read_csv(a.candidates, sep="\t", dtype={"plasmid_id": str, "representative": str})
-    m = db.select_members(cands, a.mash, a.queries, a.k)
+    copies = {} if a.keep_input_copies else db.input_copies(a.candidates_fasta, a.query_fastas or [])
+    for cid, (qid, match) in sorted(copies.items()):
+        print(f"not in the baseline: {cid} is input {qid} (same {match})", file=sys.stderr)
+    m = db.select_members(cands, a.mash, a.queries, a.k, copies)
     m.to_csv(a.table, sep="\t", index=False)
     db.extract(a.candidates_fasta, list(m.loc[m["selected"], "plasmid_id"]), a.outdir)
 
@@ -51,6 +54,9 @@ def cmd_pairs(a):
         df = pling_io.pairs(a.pling_dir, ids)
     else:
         df = pd.DataFrame(columns=["a", "b", "containment", "dcj", "dcj_censored"])
+    if a.out_query_pairs:      # members + inputs in one run: member pairs -> --out, input-member pairs -> here
+        df, qd = pling_io.split_query_pairs(df, seqio.is_query)
+        qd.to_csv(a.out_query_pairs, sep="\t", index=False)
     df.to_csv(a.out, sep="\t", index=False)
 
 
@@ -109,6 +115,8 @@ def main(argv=None):
     s.add_argument("--mash", required=True)
     s.add_argument("--queries", nargs="+", required=True)
     s.add_argument("--k", type=int, default=20)
+    s.add_argument("--query-fastas", nargs="*", help="input FASTAs: database copies of them are left out")
+    s.add_argument("--keep-input-copies", action="store_true", help="keep database copies of the inputs")
     s.add_argument("--outdir", required=True)
     s.add_argument("--table", required=True)
     s.set_defaults(fn=cmd_select_members)
@@ -117,6 +125,7 @@ def main(argv=None):
     s.add_argument("--pling-dir")
     s.add_argument("--genomes", required=True)
     s.add_argument("--out", required=True)
+    s.add_argument("--out-query-pairs", help="write input-member pairs here and only member pairs to --out")
     s.set_defaults(fn=cmd_pairs)
 
     s = sub.add_parser("report")

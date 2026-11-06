@@ -48,13 +48,23 @@ def build(queries_tsv, call_files, input_pairs_tsv, baseline_files, params: dict
     ipairs = _read_pairs(input_pairs_tsv)
     ilook = pair_lookup(ipairs[["a", "b", "containment", "dcj"]].itertuples(index=False, name=None))
 
-    baselines = {}
+    baselines, to_db = {}, {}
     for f in baseline_files:
         f = Path(f)
         if f.name.endswith(".member_pairs.tsv"):
             sc = f.name[: -len(".member_pairs.tsv")]
             members = pd.read_csv(f.with_name(f"{sc}.members.tsv"), sep="\t")
             baselines[sc] = (members, _read_pairs(f))
+        elif f.name.endswith(".input_db_pairs.tsv"):          # input vs selected members, same Pling run
+            for q, m, c, d in _read_query_db(f):
+                to_db.setdefault(q, []).append((m, c, d))
+    in_db, n_excluded = {}, {}                                 # database copies of the inputs (left out)
+    for sc, (members, _) in baselines.items():
+        if "copy_of_input" in members.columns:
+            cp = members[members["copy_of_input"].fillna("").astype(str) != ""]
+            n_excluded[sc] = len(cp)
+            for r in cp.itertuples():
+                in_db.setdefault(r.copy_of_input, set()).add(str(r.plasmid_id))
     sub_rows = []
     for sc in sorted(set(sub_of.values())):
         q = sorted(k for k, v in sub_of.items() if v == sc)
@@ -70,14 +80,17 @@ def build(queries_tsv, call_files, input_pairs_tsv, baseline_files, params: dict
         sub_rows.append({"subcommunity": sc, "community": inp.loc[inp["subcommunity"] == sc, "community"].iloc[0],
                          "n_inputs": len(q), "inputs": ";".join(name[x] for x in q),
                          "n_members_in_db": len(members), "n_members_used": len(used),
+                         "n_members_excluded": n_excluded.get(sc, 0),
                          "median_dcj_inputs": obs_dcj, "median_containment_inputs": obs_cont,
                          "community_DCJ": base_dcj, "community_containment": base_cont,
+                         "median_dcj_inputs_to_db": median_high(d for x in q for _, _, d in to_db.get(x, [])),
                          "p_tighter": rs["p_tighter"], "p_looser": rs["p_looser"], "n_subsets": rs["n_subsets"],
                          "exact_test": rs["exact"], "status": st})
     subs = pd.DataFrame(sub_rows, columns=["subcommunity", "community", "n_inputs", "inputs", "n_members_in_db",
-                                           "n_members_used", "median_dcj_inputs", "median_containment_inputs",
-                                           "community_DCJ", "community_containment", "p_tighter", "p_looser",
-                                           "n_subsets", "exact_test", "status"])
+                                           "n_members_used", "n_members_excluded", "median_dcj_inputs",
+                                           "median_containment_inputs", "community_DCJ", "community_containment",
+                                           "median_dcj_inputs_to_db", "p_tighter", "p_looser", "n_subsets",
+                                           "exact_test", "status"])
     sub_info = subs.set_index("subcommunity").to_dict("index") if len(subs) else {}
 
     rows = []
@@ -102,12 +115,18 @@ def build(queries_tsv, call_files, input_pairs_tsv, baseline_files, params: dict
         others = [x for x, s in sub_of.items() if s == sc and x != r.query_id] if sc else []
         d_others = [ilook.get(tuple(sorted((r.query_id, o))), (math.nan, math.nan))[1] for o in others]
         info = sub_info.get(sc, {}) if sc else {}
+        vs_db = to_db.get(r.query_id, []) if sc else []
+        # nearest = smallest DCJ, then smallest containment; with no DCJ computed, the smallest containment
+        near = min(vs_db, key=lambda t: (t[2], t[1], t[0])) if vs_db else ("", math.nan, math.nan)
         in_rows.append({"input_id": r.input_id, "query_id": r.query_id, "length": r.length, "status": r.status,
                         "reason": getattr(r, "reason", "") or getattr(r, "note", ""),
                         "ref_plasmid": r.ref_plasmid if sc else "", "subcommunity": sc or "",
                         "community": r.community if sc else "", "accio_score": getattr(r, "final_score", ""),
                         "mash_score": getattr(r, "mash_score", ""), "n_inputs_in_subcommunity": len(others) + 1 if sc else 0,
                         "median_dcj_to_other_inputs": median_high(d_others),
+                        "nearest_db_plasmid": near[0], "nearest_db_dcj": near[2], "nearest_db_containment": near[1],
+                        "median_dcj_to_db": median_high(d for _, _, d in vs_db), "n_db_compared": len(vs_db),
+                        "in_db_as": ";".join(sorted(in_db.get(r.query_id, ()))),
                         "community_DCJ": info.get("community_DCJ", math.nan),
                         "subcommunity_status": info.get("status", "")})
     inputs = pd.DataFrame(in_rows)
@@ -130,6 +149,14 @@ def build(queries_tsv, call_files, input_pairs_tsv, baseline_files, params: dict
     }
     (out / "clust_assess.json").write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n")
     return summary
+
+
+def _read_query_db(path) -> list[tuple[str, str, float, float]]:
+    df = pd.read_csv(path, sep="\t", dtype={"query_id": str, "db_plasmid": str})
+    if df.empty:
+        return []
+    dcj = df["dcj"].replace("inf", math.inf).astype(float)
+    return list(zip(df["query_id"], df["db_plasmid"], df["containment"].astype(float), dcj))
 
 
 def _read_pairs_empty() -> pd.DataFrame:

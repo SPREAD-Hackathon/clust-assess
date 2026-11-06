@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .seqio import read_fasta, write_fasta
+from .seqio import input_name, read_fasta, write_fasta
 
 REQUIRED = ["plasmidDB.fasta", "plasmidDB_info.csv", "plasmidDB.fasta.msh"]
 MANIFEST_FILES = REQUIRED + ["pling/dcj_thresh_4_graph/objects/typing.tsv",
@@ -86,16 +86,56 @@ def candidates(db: str | Path, subcommunity: str, mode: str, out_fasta: str | Pa
     return cands
 
 
-def select_members(cands: pd.DataFrame, mash_tsv: str | Path, query_ids: list[str], k: int) -> pd.DataFrame:
-    """The k candidates closest (min Mash distance) to any input; k <= 0 keeps all."""
-    mash = pd.read_csv(mash_tsv, sep="\t", header=None, names=["ref", "query", "dist", "p", "shared"])
+def _fasta_stem(name: str) -> str:
+    n = Path(name).name
+    for ext in (".fasta", ".fa", ".fna"):
+        if n.endswith(ext):
+            return n[: -len(ext)]
+    return n
+
+
+def _seq_key(seq: str) -> str:
+    return hashlib.sha256(seq.upper().encode()).hexdigest()
+
+
+def input_copies(cand_fasta: str | Path, query_fastas: list[str | Path]) -> dict[str, tuple[str, str]]:
+    """Database candidates that are the input plasmids themselves, as {candidate id: (query id, match)}.
+    match is 'sequence' (identical sequence, case-insensitive), 'name' (candidate id == input name) or both.
+    A rotated or reverse-complemented copy is not recognised; near-identical plasmids are kept on purpose:
+    they are genuine relatives, not the input."""
+    by_seq, by_name = {}, {}
+    for f in query_fastas:
+        for qid, _, seq in read_fasta(f):
+            by_seq.setdefault(_seq_key(seq), qid)
+            by_name[input_name(qid)] = qid
+    out = {}
+    for cid, _, seq in read_fasta(cand_fasta):
+        q_seq, q_name = by_seq.get(_seq_key(seq)), by_name.get(cid)
+        if q_seq or q_name:
+            match = "name+sequence" if q_seq and q_name and q_seq == q_name else "sequence" if q_seq else "name"
+            out[cid] = (q_seq or q_name, match)
+    return out
+
+
+def select_members(cands: pd.DataFrame, mash_tsv: str | Path, query_ids: list[str], k: int,
+                   copies: dict[str, tuple[str, str]] | None = None) -> pd.DataFrame:
+    """The k candidates closest (min Mash distance) to any input; k <= 0 keeps all. Candidates in `copies`
+    (the inputs themselves, see input_copies) are listed but never selected and take no slot of the k."""
+    copies = copies or {}
+    mash = pd.read_csv(mash_tsv, sep="\t", header=None, names=["ref", "query", "dist", "p", "shared"],
+                       dtype={"ref": str, "query": str})
+    mash["query"] = mash["query"].map(_fasta_stem)     # mash names a query FASTA by its file: Q__x.fasta -> Q__x
     mash = mash[mash["query"].isin(query_ids)]
     closest = mash.groupby("ref")["dist"].min()
     members = cands.copy()
     members["min_mash_to_inputs"] = members["plasmid_id"].map(closest).fillna(1.0)
+    members["copy_of_input"] = members["plasmid_id"].map(lambda p: copies.get(p, ("", ""))[0])
+    members["copy_match"] = members["plasmid_id"].map(lambda p: copies.get(p, ("", ""))[1])
     members = members.sort_values(["min_mash_to_inputs", "plasmid_id"]).reset_index(drop=True)
-    members["rank"] = range(1, len(members) + 1)
-    members["selected"] = members["rank"] <= k if k > 0 else True
+    eligible = members["copy_of_input"] == ""
+    members["rank"] = pd.Series(pd.NA, index=members.index, dtype="Int64")
+    members.loc[eligible, "rank"] = range(1, int(eligible.sum()) + 1)
+    members["selected"] = (eligible & ((members["rank"] <= k).fillna(False) if k > 0 else eligible)).astype(bool)
     return members
 
 

@@ -30,6 +30,21 @@ def locate(pling_dir: str | Path) -> tuple[Path, Path | None]:
     return cont, dcj
 
 
+QUERY_DB_COLS = ["query_id", "db_plasmid", "containment", "dcj", "dcj_censored"]
+
+
+def split_query_pairs(df: pd.DataFrame, is_query) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Split the pairs of one Pling run on database members + inputs into (member-member pairs,
+    input-member pairs with the input first). Input-input pairs are dropped: PLING_INPUTS has them."""
+    qa, qb = df["a"].map(is_query).astype(bool), df["b"].map(is_query).astype(bool)
+    mixed = df[qa != qb]
+    flip = qb[qa != qb]
+    qd = pd.DataFrame({"query_id": mixed["b"].where(flip, mixed["a"]), "db_plasmid": mixed["a"].where(flip, mixed["b"]),
+                       "containment": mixed["containment"], "dcj": mixed["dcj"], "dcj_censored": mixed["dcj_censored"]},
+                      columns=QUERY_DB_COLS)
+    return df[~qa & ~qb].reset_index(drop=True), qd.sort_values(["query_id", "db_plasmid"]).reset_index(drop=True)
+
+
 def pairs(pling_dir: str | Path, ids: list[str]) -> pd.DataFrame:
     cont_path, dcj_path = locate(pling_dir)
     cont = _read(cont_path)

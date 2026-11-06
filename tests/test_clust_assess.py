@@ -142,6 +142,77 @@ def test_report_json_is_strict_and_uses_null(tmp_path):
     assert pair["DCJ"] is None and pair["dcj_censored"] is True and pair["containment"] == 0.9
 
 
+def test_report_input_to_db_and_copies(tmp_path):
+    test_report_final_output_format(tmp_path)                 # queries, calls, input pairs and a baseline in tmp_path
+    sc = "community_0_subcommunity_0"
+    _write(tmp_path / f"{sc}.members.tsv", pd.DataFrame({
+        "plasmid_id": ["m1", "m2", "m3", "pA_copy"], "selected": [True, True, True, False],
+        "copy_of_input": ["", "", "", "Q__pA"], "copy_match": ["", "", "", "sequence"]}))
+    qd = _write(tmp_path / f"{sc}.input_db_pairs.tsv", pd.DataFrame(
+        [("Q__pA", "m1", 0.1, 2, False), ("Q__pA", "m2", 0.05, 2, False), ("Q__pA", "m3", 0.6, math.inf, True),
+         ("Q__pB", "m1", 0.7, math.inf, True), ("Q__pB", "m2", 0.4, math.inf, True)], columns=pling_io.QUERY_DB_COLS))
+    s = report.build(tmp_path / "queries.tsv", sorted(tmp_path.glob("Q__*.call.tsv")), tmp_path / "input_pairs.tsv",
+                     [tmp_path / f"{sc}.member_pairs.tsv", tmp_path / f"{sc}.members.tsv", qd], {"n_resample": 100},
+                     tmp_path / "out2")
+    inp = pd.read_csv(tmp_path / "out2" / "inputs.tsv", sep="\t").set_index("input_id")
+    a = inp.loc["pA"]                                         # DCJ tie (2, 2) broken by containment: m2
+    assert a["nearest_db_plasmid"] == "m2" and a["nearest_db_dcj"] == 2 and a["nearest_db_containment"] == 0.05
+    assert a["median_dcj_to_db"] == 2 and a["n_db_compared"] == 3 and a["in_db_as"] == "pA_copy"
+    b = inp.loc["pB"]                                         # no DCJ to any member: nearest by containment
+    assert b["nearest_db_plasmid"] == "m2" and pd.isna(b["nearest_db_dcj"]) and b["nearest_db_containment"] == 0.4
+    assert pd.isna(inp.loc["pD", "nearest_db_plasmid"]) and inp.loc["pD", "n_db_compared"] == 0
+    sub = pd.read_csv(tmp_path / "out2" / "subcommunities.tsv", sep="\t").iloc[0]
+    assert sub["n_members_in_db"] == 4 and sub["n_members_used"] == 3 and sub["n_members_excluded"] == 1
+    assert pd.isna(sub["median_dcj_inputs_to_db"])             # [2, 2, inf, inf, inf]: more than half not computed
+    pb = next(r for r in s["inputs"] if r["input_id"] == "pB")
+    assert pb["nearest_db_dcj"] is None and pb["nearest_db_plasmid"] == "m2"
+
+
+def test_split_query_pairs():
+    df = pd.DataFrame([("Q__a", "m1", 0.1, 2.0, False), ("m1", "m2", 0.2, 3.0, False), ("Q__a", "Q__b", 0.0, 0.0, False),
+                       ("m2", "Q__b", 0.6, math.inf, True)], columns=["a", "b", "containment", "dcj", "dcj_censored"])
+    members, qd = pling_io.split_query_pairs(df, seqio.is_query)
+    assert list(zip(members["a"], members["b"])) == [("m1", "m2")]                   # input-input pair dropped
+    assert list(zip(qd["query_id"], qd["db_plasmid"])) == [("Q__a", "m1"), ("Q__b", "m2")]   # input always first
+    assert bool(qd.iloc[1]["dcj_censored"]) and math.isinf(qd.iloc[1]["dcj"])
+    m0, q0 = pling_io.split_query_pairs(df.iloc[:0], seqio.is_query)
+    assert m0.empty and q0.empty and list(q0.columns) == pling_io.QUERY_DB_COLS
+
+
+def test_input_copies_left_out_of_baseline(tmp_path):
+    from clust_assess import db
+    cand = tmp_path / "cands.fasta"
+    cand.write_text(">R1 circular=true\nACGTACGT\n>NZ_X.1\nTTTT\n>R2\nGGGG\n>R3\nCCCC\n>Q2\nACGTACGT\n")
+    qa, qx = tmp_path / "Q__a.fasta", tmp_path / "Q__NZ_X.1.fasta"
+    qa.write_text(">Q__a circular=true\nacgtacgt\n")                                 # R1 and Q2: same sequence
+    qx.write_text(">Q__NZ_X.1 circular=true\nAAAA\n")                                # NZ_X.1: same name only
+    copies = db.input_copies(cand, [qa, qx])
+    assert copies == {"R1": ("Q__a", "sequence"), "Q2": ("Q__a", "sequence"), "NZ_X.1": ("Q__NZ_X.1", "name")}
+    cands = pd.DataFrame({"plasmid_id": ["R1", "NZ_X.1", "R2", "R3", "Q2"], "length": 8})
+    mash = tmp_path / "m.tsv"
+    mash.write_text("R1\tQ__a\t0.0\t0\t1/1\nNZ_X.1\tQ__NZ_X.1\t0.0\t0\t1/1\nR2\tQ__a\t0.01\t0\t1/1\n"
+                    "R3\tQ__a\t0.02\t0\t1/1\nQ2\tQ__a\t0.0\t0\t1/1\n")
+    m = db.select_members(cands, mash, ["Q__a", "Q__NZ_X.1"], k=1, copies=copies).set_index("plasmid_id")
+    assert list(m.index[m["selected"]]) == ["R2"]                                      # copies take no slot of k
+    assert m.loc["R1", "copy_of_input"] == "Q__a" and pd.isna(m.loc["R1", "rank"]) and m.loc["R2", "rank"] == 1
+    every = db.select_members(cands, mash, ["Q__a"], k=0, copies=copies).set_index("plasmid_id")["selected"]
+    assert every.to_dict() == {"R1": False, "Q2": False, "R2": True, "R3": True, "NZ_X.1": False}   # k=0: all but copies
+    kept = db.select_members(cands, mash, ["Q__a"], k=1)                              # --keep-input-copies
+    assert kept["copy_of_input"].eq("").all() and kept.loc[kept["selected"], "plasmid_id"].tolist() == ["Q2"]
+
+
+def test_select_members_reads_mash_file_names(tmp_path):
+    """`mash dist ref.msh Q__a.fasta` names the query by its file; the k closest must still be by distance."""
+    from clust_assess import db
+    cands = pd.DataFrame({"plasmid_id": ["A1", "B1", "C1"], "length": 8})
+    mash = tmp_path / "m.tsv"
+    mash.write_text("A1\tQ__a.1.fasta\t0.09\t0\t1/1\nB1\tQ__a.1.fasta\t0.001\t0\t1/1\n"
+                    "C1\tdir/Q__b.fasta\t0.02\t0\t1/1\nA1\tQ__b.fasta\t0.05\t0\t1/1\n")
+    m = db.select_members(cands, mash, ["Q__a.1", "Q__b"], k=2).set_index("plasmid_id")
+    assert m["min_mash_to_inputs"].to_dict() == {"B1": 0.001, "C1": 0.02, "A1": 0.05}
+    assert list(m.index[m["selected"]]) == ["B1", "C1"]                              # not alphabetical A1, B1
+
+
 def test_candidates_include_deduplicated_copies(tmp_path):
     from clust_assess import db
     d = tmp_path / "db"
