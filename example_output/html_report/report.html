@@ -688,7 +688,7 @@ async function loadData(){
 /* ---------- reference database ---------- */
 const pctile=(arr,q)=>{ if(!arr.length) return NaN; const a=[...arr].sort((x,y)=>x-y), i=(a.length-1)*q, lo=Math.floor(i), hi=Math.ceil(i); return a[lo]+(a[hi]-a[lo])*(i-lo); };
 const sdArr=(a,m)=>a.length>1?Math.sqrt(a.reduce((s,x)=>s+(x-m)**2,0)/(a.length-1)):NaN;
-function buildRef(text){
+function readRefTable(text,groups){
   const nl=text.indexOf('\n'), head=(nl<0?text:text.slice(0,nl)).replace(/\r$/,'').replace(/^﻿/,'');
   const delim=['\t',';',','].map(x=>[x,head.split(x).length]).sort((x,y)=>y[1]-x[1])[0][0];
   const header=head.split(delim).map(x=>x.trim()), find=names=>header.findIndex(h=>names.includes(key(h)));
@@ -697,7 +697,7 @@ function buildRef(text){
   if(ia<0||ib<0) bad('Plasmid name column(s) missing: '+[ia<0&&'plasmid_1',ib<0&&'plasmid_2'].filter(Boolean).join(', ')+'.');
   if(id<0) bad('The reference database needs a dcj column.');
   if(ig<0) bad('The reference database needs a subcommunity (or subcommunity) column: it says which group each pair belongs to.');
-  const groups=new Map(); let skipped=0, raw=0, pos=nl<0?text.length:nl+1;
+  let skipped=0, raw=0, pos=nl<0?text.length:nl+1;
   while(pos<text.length){
     let e=text.indexOf('\n',pos); if(e<0) e=text.length;
     let line=text.slice(pos,e); pos=e+1; if(!line) continue; if(line.charCodeAt(line.length-1)===13) line=line.slice(0,-1);
@@ -709,6 +709,15 @@ function buildRef(text){
     let y=g.idx.get(b); if(y===undefined){ y=g.names.length; g.idx.set(b,y); g.names.push(b); }
     g.pa.push(x); g.pb.push(y); g.pd.push(d); g.hist.set(d,(g.hist.get(d)||0)+1);
   }
+  return {header,delim,skipped,raw};
+}
+// Reference = the pipeline's own database pairs of the subcommunity (db_distributions/within_pairs.tsv.gz) when the report has them,
+// the bundled table for any other subcommunity. The pipeline's pairs are read first, so they win where a plasmid is in both.
+function buildRef(text,extraText){
+  const groups=new Map();
+  if(extraText) readRefTable(extraText,groups);
+  const {header,delim,skipped,raw}=readRefTable(text,groups);
+  const bad=msg=>{ const e=new Error(msg); e.kind='invalid'; e.file=REF_FILE; e.header=header; throw e; };
   if(!groups.size) bad(`No valid data rows: all ${raw} row(s) have a missing plasmid name, group, or a negative or non-numeric dcj.`);
   const comm={}, set=new Set(), alias=new Map(), byComm=new Map(); let total=0;
   groups.forEach((g,k)=>{
@@ -751,7 +760,7 @@ function build(text, refText, inputsText, withinText){
   if(idx.dcj<0 && idx.cont<0) bad('No metric column found: at least one of DCJ or containment is required.');
   const has = {dcj:idx.dcj>=0, cont:idx.cont>=0, cd:idx.cd>=0, cc:idx.cc>=0, comm:idx.comm>=0, sub:idx.sa>=0||idx.sb>=0};
   S.has = has; S.suppliedBaselines = suppliedBaselines;
-  buildRef(refText);
+  buildRef(refText,withinText);
   S.censPairs=[]; S.fromInputs=0; S.byRef=0; S.inputsTbl=[]; S.within=null;
   if(withinText) S.within=parseWithin(withinText);
   if(!has.dcj) bad('The results file needs a DCJ column: the reference database holds DCJ distances only.');
@@ -781,11 +790,12 @@ function build(text, refText, inputsText, withinText){
     if(!o.gc && o.sa && !o.mixed) o.gc = o.sa;
     rows.push(o);
   });
+  S.inputNames=new Set(); rows.forEach(r=>{ S.inputNames.add(r.a); S.inputNames.add(r.b); });   // database copies of the inputs are in the reference too: these names stay inputs
   if(inputsText){   // inputs.tsv: each input's nearest database plasmid, as an input-to-reference pair (only when that plasmid is in the reference)
     const q=parseCSV(inputsText), ci=n=>q.header.findIndex(h=>key(h)===n), ii=ci('inputid'), nn=ci('nearestdbplasmid'), nd=ci('nearestdbdcj'), nc=ci('nearestdbcontainment'), ns=ci('subcommunity');
     { const g=n=>ci(n), c={st:g('status'),rs:g('reason'),rf:g('refplasmid'),sc:g('subcommunity'),ac:g('winaccioscore')>=0?g('winaccioscore'):g('accioscore'),ms:g('mashscore')};
       S.inputsTbl=ii<0?[]:q.rows.map(r=>({id:(r[ii]||'').trim(),status:(r[c.st]||'').trim(),reason:(r[c.rs]||'').trim(),ref:(r[c.rf]||'').trim(),sub:(r[c.sc]||'').trim(),accio:parseFloat(r[c.ac]),mash:parseFloat(r[c.ms]),dcj:nd>=0?parseFloat(r[nd]):NaN,cont:nc>=0?parseFloat(r[nc]):NaN})).filter(o=>o.id); }
-    if(ii>=0&&nn>=0&&nd>=0) q.rows.forEach((r,ln)=>{ const a=(r[ii]||'').trim(), b=(r[nn]||'').trim(), dv=num(r[nd]||''); if(!a||!b||a===b||!Number.isFinite(dv)||!S.ref.set.has(b)) return;
+    if(ii>=0&&nn>=0&&nd>=0) q.rows.forEach((r,ln)=>{ const a=(r[ii]||'').trim(), b=(r[nn]||'').trim(), dv=num(r[nd]||''); if(!a||!b||a===b||!Number.isFinite(dv)||!S.ref.set.has(b)||S.inputNames.has(b)) return;
       const k=[a,b].sort().join('\u0000'); if(seen.has(k)) return; seen.add(k); S.fromInputs++;
       const sa=ns>=0?nz(r[ns]||''):'', o={a,b,dcj:dv,cd:NaN,cont:0,cc:NaN,contRaw:nc>=0?num(r[nc]||''):NaN,mashRaw:NaN,sa,sb:'',cens:false,mixed:false,gc:sa,line:ln+2,mg:{}};
       for(const f of ['geo','host','date']) if(S.hasMd[f]) o.mg[f]=['','']; rows.push(o); }); }
@@ -793,7 +803,7 @@ function build(text, refText, inputsText, withinText){
   // split: a pair with exactly one plasmid in the reference is an input-to-reference ("cross") pair
   const R=S.ref, allRows=rows; rows=[]; S.cross=[];
   S.hasRaw={cont:allRows.some(r=>Number.isFinite(r.contRaw)),mash:allRows.some(r=>Number.isFinite(r.mashRaw))};   // drawn as their own heatmaps, not part of the judgement
-  allRows.forEach(o=>{ const ia=R.set.has(o.a), ib=R.set.has(o.b);
+  allRows.forEach(o=>{ const ia=R.set.has(o.a)&&!S.inputNames.has(o.a), ib=R.set.has(o.b)&&!S.inputNames.has(o.b);
     if(ia!==ib){ if(ia){ [o.a,o.b]=[o.b,o.a]; for(const f in o.mg) o.mg[f]=[o.mg[f][1],o.mg[f][0]]; } o.src='cross'; S.cross.push(o); }
     else { o.src='input'; rows.push(o); } });
   if(!rows.length) bad('No input-to-input pairs found: every pair in the results file has exactly one plasmid in the reference database. The results file needs the suspected plasmids compared with each other.');
@@ -1214,12 +1224,12 @@ const distLbl=r=>[S.has.dcj?'DCJ '+r.dcj:'',S.has.cont?'C '+fmt(r.cont):''].filt
 // reference plasmids worth showing: the ones that appear in the results file, then the ones closest to them
 // (or, when none appear, the most central members of the subcommunity)
 function refMembers(rg,anchors,K){
-  const out=anchors.filter(n=>rg.idx.has(n)).slice(0,K);
+  const out=anchors.filter(n=>rg.idx.has(n)&&!S.inputNames.has(n)).slice(0,K);
   if(!rg._cent){ const N=rg.names.length, sm=new Float64Array(N), ct=new Float64Array(N);
     for(let i=0;i<rg.pa.length;i++){ sm[rg.pa[i]]+=rg.pd[i]; ct[rg.pa[i]]++; sm[rg.pb[i]]+=rg.pd[i]; ct[rg.pb[i]]++; }
     rg._cent=rg.names.map((n,i)=>({n,m:ct[i]?sm[i]/ct[i]:Infinity})).sort((x,y)=>x.m-y.m).map(x=>x.n); }
-  let pool=rg._cent;
-  if(out.length) pool=rg.names.map(n=>{ if(out.includes(n)) return null; let t=0,c=0; out.forEach(a=>{ const d=refD(rg,a,n); if(Number.isFinite(d)){ t+=d; c++; } }); return c?{n,m:t/c}:null; }).filter(Boolean).sort((x,y)=>x.m-y.m).map(x=>x.n);
+  let pool=rg._cent.filter(n=>!S.inputNames.has(n));
+  if(out.length) pool=rg.names.filter(n=>!S.inputNames.has(n)).map(n=>{ if(out.includes(n)) return null; let t=0,c=0; out.forEach(a=>{ const d=refD(rg,a,n); if(Number.isFinite(d)){ t+=d; c++; } }); return c?{n,m:t/c}:null; }).filter(Boolean).sort((x,y)=>x.m-y.m).map(x=>x.n);
   for(const n of pool){ if(out.length>=K) break; if(!out.includes(n)) out.push(n); }
   return out;
 }
@@ -1667,9 +1677,10 @@ function renderSummary(){
       return ['network','Input vs known reference plasmid', c&&c.lo>50?'pass':c&&c.hi<50?'fail':'warn',
         `${S.cross.length} pairs between your plasmids and ${nm.join(', ')} (in the reference): closer than ${fmt(c.est,0)}% of reference pairs on average${Number.isFinite(c.lo)?` (95% CI ${fmt(c.lo,0)}–${fmt(c.hi,0)}%)`:''}`]; })()]:[]),
     ['normal','Reference coverage', (S.unmatched.length||(ASSUME_SOLE&&S.assumedSingle))?'warn':'pass', `${gs.length-S.unmatched.length} of ${gs.length} subcommunit${gs.length===1?'y':'ies'} found in the reference database${S.assumedSingle?(ASSUME_SOLE?' (assigned to the only subcommunity in the reference at your request: the ids in the results file do not match it)':' (no subcommunity in the results file: assigned to the only subcommunity in the reference)'):''}${S.cross.length?` · ${S.cross.length} input–reference pair(s)${S.fromInputs?` (${S.fromInputs} from inputs.tsv)`:''}`:''}${S.byRef?` · ${S.byRef} pair(s) placed in the subcommunity of the known reference plasmids their inputs were compared with`:''}`],
-    ['normal','Reference quality', (S.notAssessed.length||gs.some(g=>g.broad))?'warn':'pass',
+    ['normal','Reference quality', (S.notAssessed.length||gs.some(g=>g.broad)||gs.some(g=>g.ref&&g.ref.names.some(n=>S.inputNames.has(n))))?'warn':'pass',
       [S.notAssessed.length?`${S.notAssessed.length} subcommunit${S.notAssessed.length===1?'y':'ies'} not assessed (${S.notAssessed.map(x=>x.key+': '+(x.ref?'reference '+x.ref+' pair'+(x.ref===1?'':'s'):'not in the reference')+', '+x.pairs+' input pair'+(x.pairs===1?'':'s')+' left out').join('; ')})`:'',
-       gs.some(g=>g.broad)?`broad reference (wide spread of DCJ values): ${gs.filter(g=>g.broad).map(g=>g.label).join(', ')}`:''].filter(Boolean).join(' · ')||`every subcommunity has a reference of at least ${MIN_REF_PAIRS} pairs and a narrow spread`],
+       gs.some(g=>g.broad)?`broad reference (wide spread of DCJ values): ${gs.filter(g=>g.broad).map(g=>g.label).join(', ')}`:'',
+       gs.some(g=>g.ref&&g.ref.names.some(n=>S.inputNames.has(n)))?`the reference holds database copies of your inputs (${gs.map(g=>g.ref?g.ref.names.filter(n=>S.inputNames.has(n)).length:0).reduce((x,y)=>x+y,0)} plasmids), so the comparison is tighter than it would be against unrelated reference plasmids`:''].filter(Boolean).join(' · ')||`every subcommunity has a reference of at least ${MIN_REF_PAIRS} pairs and a narrow spread`],
     ['network','Network connectivity', !cnt['Outbreak-related']?'fail':comps===1&&noRel===0?'pass':'warn', cnt['Outbreak-related']?`${comps} connected related group(s)`:'No related edges'],
     ['genstats','Isolated plasmids', noRel===0?'pass':noRel<S.plasmids.length?'warn':'fail', `${noRel} of ${S.plasmids.length} plasmid(s) with no related partner`]
   ];
