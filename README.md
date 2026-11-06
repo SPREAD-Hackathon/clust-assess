@@ -56,3 +56,4 @@ flowchart LR
 - [ ] test statistics for pairwise distances - Celia - Gijs
 - [ ] interactive HTML output with plots for visualization - Effiong
 - [ ] slide crafting - Celia/Greb (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
+- [ ] update name to revelio
