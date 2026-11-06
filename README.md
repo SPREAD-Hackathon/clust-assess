@@ -39,17 +39,17 @@ flowchart LR
 - [X] run ACCIO on Galaxy test dataset
 - [X] split PLSDB file prior to ACCIO
     - [X] like pling sourmash pre-filtering, separate it by community or subset PLSDB regionally (Denmark)
-- [ ] testing pling add with `-asyn` to not re-compute clusters and run fast, with PLSDB pling or using PLSDB pling mash distance to pull closest subcommunity
+- [X] testing pling add with `-asyn` to not re-compute clusters and run fast, with PLSDB pling or using PLSDB pling mash distance to pull closest subcommunity
 - [X] make GitHub page 
 - [X] writing workflow - Robin
 - [X] pull metadata for PLSDB from Denmark and filter down database
-- [ ] interactive HTML output with plots for visualization - Effiong
 - [X] example output data structure - Gijs
-- [ ] slide crafting - Celia/Greb (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
 - [X] extracting distance distributions for subcommunity/containment files and scripting
 - [X] pling database for Denmark plasmid subset
+- [X] positive test dataset from Denmark PLSDB
+- [X] script for distance distributions for subcommunity/containment and adding to nextflow
 - [ ] environment (conda, singularity, etc) for ACCIO
 - [ ] download pipeline & results from CLIMB
-- [ ] positive test dataset from Denmark PLSDB
-- [ ] script for distance distributions for subcommunity/containment and adding to nextflow
-
+- [ ] script to combine input plasmids with matched subcommunity and calculate pairwise distance (ACCIO find results and pull out plasmids from db)
+- [ ] interactive HTML output with plots for visualization - Effiong
+- [ ] slide crafting - Celia/Greb (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
