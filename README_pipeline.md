@@ -64,22 +64,3 @@ flowchart TB
     class DB,DBIN store
     class OUT,MID,ODD,OV out
 ```
-# clust-assess in one picture
-
-```mermaid
-flowchart LR
-    IN["Suspected<br/>outbreak plasmids"] --> A["1. Assign<br/>ACCIO: closest public plasmid<br/>and its Pling subcommunity"]
-    DB[("Public plasmids<br/>PLSDB, clustered<br/>by ACCIO + Pling")] --> A
-    A --> B["2. Baseline<br/>k closest public plasmids<br/>of that subcommunity"]
-    DB --> B
-    A --> C["3. Compare<br/>Pling distances:<br/>inputs vs inputs,<br/>public vs public"]
-    B --> C
-    C --> T["4. Test<br/>are the inputs tighter<br/>than random public sets?"]
-    T --> V{{"Verdict<br/>tighter than database<br/>similar / looser<br/>not related"}}
-
-    classDef store fill:#cde2fb,stroke:#256abf,color:#0b0b0b
-    classDef verdict fill:#fde6da,stroke:#c4501f,color:#0b0b0b
-    class DB store
-    class V verdict
-```
-
