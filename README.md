@@ -45,7 +45,7 @@ flowchart LR
 - [X] pull metadata for PLSDB from Denmark and filter down database
 - [ ] interactive HTML output with plots for visualization - Effiong
 - [X] example output data structure - Gijs
-- [ ] slide crafting - Celia (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
+- [ ] slide crafting - Celia/Greb (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
 - [X] extracting distance distributions for subcommunity/containment files and scripting
 - [X] pling database for Denmark plasmid subset
 - [ ] environment (conda, singularity, etc) for ACCIO
