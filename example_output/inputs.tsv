@@ -1,0 +1,16 @@
+input_id	query_id	length	status	reason	ref_plasmid	subcommunity	community	accio_score	mash_score	n_inputs_in_subcommunity	median_dcj_to_other_inputs	community_DCJ	subcommunity_status
+pIso1_PT1_Eh1_OXA-48	Q__pIso1_PT1_Eh1_OXA-48	71966	called		NZ_CP117991.1	community_157_subcommunity_0	community_157	0.99	1	7	1	NA	no_baseline
+pIso4_PT2_Cf1_OXA-48	Q__pIso4_PT2_Cf1_OXA-48	50833	no_assignment	below_score_thresholds						0	NA	NA	
+pIso9_PT7_Ec3_OXA-48	Q__pIso9_PT7_Ec3_OXA-48	65878	called		NZ_CP117991.1	community_157_subcommunity_0	community_157	0.9377	0.9964	7	2	NA	no_baseline
+pIso8_PT6_Kp2_OXA-48	Q__pIso8_PT6_Kp2_OXA-48	67853	called		NZ_CP117991.1	community_157_subcommunity_0	community_157	0.945	0.9965	7	5	NA	no_baseline
+pIso15_PT13_Ec5_OXA-48	Q__pIso15_PT13_Ec5_OXA-48	71966	called		NZ_CP117991.1	community_157_subcommunity_0	community_157	0.9888	1	7	1	NA	no_baseline
+pIso5_PT3_Ka1_OXA-48	Q__pIso5_PT3_Ka1_OXA-48	73315	called		NZ_CP117991.1	community_157_subcommunity_0	community_157	0.985	1	7	2	NA	no_baseline
+pIso3_PT1_Ec1_OXA-48	Q__pIso3_PT1_Ec1_OXA-48	57927	no_assignment	below_score_thresholds						0	NA	NA	
+pIso14_PT12_Kp5_OXA-48	Q__pIso14_PT12_Kp5_OXA-48	67271	no_assignment	below_score_thresholds						0	NA	NA	
+pIso2_PT1_Kp1_OXA-48	Q__pIso2_PT1_Kp1_OXA-48	71966	called		NZ_CP117991.1	community_157_subcommunity_0	community_157	0.9888	1	7	1	NA	no_baseline
+pIso11_PT9_Kp3_OXA-48	Q__pIso11_PT9_Kp3_OXA-48	63589	no_assignment	below_score_thresholds						0	NA	NA	
+pIso13_PT11_Eh2_OXA-48	Q__pIso13_PT11_Eh2_OXA-48	69981	no_assignment	below_score_thresholds						0	NA	NA	
+pIso7_PT5_Ec2_OXA-48	Q__pIso7_PT5_Ec2_OXA-48	69124	called		NZ_CP117991.1	community_157_subcommunity_0	community_157	0.9676	0.9988	7	4	NA	no_baseline
+pIso6_PT4_Cf2_OXA-48	Q__pIso6_PT4_Cf2_OXA-48	89192	no_assignment	below_score_thresholds						0	NA	NA	
+pIso12_PT10_Kp4_OXA-48	Q__pIso12_PT10_Kp4_OXA-48	63675	no_assignment	below_score_thresholds						0	NA	NA	
+pIso10_PT8_Ec4_OXA-48	Q__pIso10_PT8_Ec4_OXA-48	69411	no_assignment	below_score_thresholds						0	NA	NA	

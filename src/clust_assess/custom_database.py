@@ -47,3 +47,4 @@ def generete_database(distance_file: pd.DataFrame, plasmid_communities: pd.DataF
     save_database_files(df_community, "community", "community_2", metric)
 
 generete_database(distance_info, plasmid_communities, "distance")
+generete_database(all_plasmid_containment, plasmid_communities, "distance")

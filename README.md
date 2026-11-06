@@ -19,24 +19,37 @@ If the within-subcommunity variability of the input plasmids is much lower than 
 
 ## Workflow diagram
 
-![Workflow diagram](workflow.png)
+```mermaid
+flowchart LR
+    IN["Input multi-FASTA<br/>(plasmids of interest)"] --> PQ["PREP_QUERIES<br/>split, rename"]
+    DB[("ACCIO / Pling database<br/>e.g. PLSDB")] --> VD[VERIFY_DB]
+    PQ --> AC["ACCIO_CALL<br/>assign each plasmid to its<br/>closest DB plasmid + subcommunity"]
+    VD --> AC
+    AC --> SM["SELECT_MEMBERS<br/>k closest DB plasmids<br/>of each subcommunity"]
+    SM --> PM["PLING_MEMBERS<br/>baseline: distances among<br/>those DB plasmids"]
+    PQ --> PI["PLING_INPUTS<br/>distances among<br/>the input plasmids"]
+    PM --> RE[REPORT]
+    PI --> RE
+    RE --> OUT["final_output.csv<br/>+ tables and JSON"]
+```
 
 # Tasks 
 - [X] get dataset from galaxy onto CLIMB and make pling database - Nathan
 - [X] PLSDB pling onto CLIMB (`shared-team/pling_plsdb/`)
-- [ ] run ACCIO on Galaxy test dataset
+- [X] run ACCIO on Galaxy test dataset
 - [X] split PLSDB file prior to ACCIO
     - [X] like pling sourmash pre-filtering, separate it by community or subset PLSDB regionally (Denmark)
-- [ ] testing pling add with `-asyn` to not re-compute clusters and run fast 
+- [ ] testing pling add with `-asyn` to not re-compute clusters and run fast, with PLSDB pling or using PLSDB pling mash distance to pull closest subcommunity
 - [X] make GitHub page 
 - [X] writing workflow - Robin
 - [X] pull metadata for PLSDB from Denmark and filter down database
 - [ ] interactive HTML output with plots for visualization - Effiong
 - [X] example output data structure - Gijs
 - [ ] slide crafting - Celia (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
-- [ ] extracting distance distributions for subcommunity/containment files and scripting
+- [X] extracting distance distributions for subcommunity/containment files and scripting
 - [X] pling database for Denmark plasmid subset
 - [ ] environment (conda, singularity, etc) for ACCIO
 - [ ] download pipeline & results from CLIMB
-- [ ] positive test dataset from Denmark PLSDB 
+- [ ] positive test dataset from Denmark PLSDB
+- [ ] script for distance distributions for subcommunity/containment and adding to nextflow
 
