@@ -2,9 +2,9 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 
-communities = "pling_plsdb/typing.tsv"
-all_plasmid_distances = "outputfolder/pling/pling_dcj_dists_by_length.tsv"
-all_plasmid_containment = "outputfolder/pling/containment/all_pairs_containment_distance.tsv"
+communities = "15raw_plus_danish_subcommunity_db/pling/pling_dcj_length_subcommuntities/object/typing.tsv"
+all_plasmid_distances = "15raw_plus_danish_subcommunity_db/pling/pling_dcj_dists_by_length.tsv"
+all_plasmid_containment = "15raw_plus_danish_subcommunity_db/pling/containment/all_pairs_containment_distance.tsv"
 
 # Load data
 plasmid_communities = pd.read_csv(communities, sep="\t")
