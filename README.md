@@ -54,6 +54,6 @@ flowchart LR
 - [ ] add PLSDB (or other database file) as dependency
 - [ ] test dataset from Denmark IncN2
 - [X] test statistics for pairwise distances - Celia - Gijs
-- [ ] interactive HTML output with plots for visualization - Effiong
+- [X] interactive HTML output with plots for visualization - Effiong (see [html_report/](html_report/README.md))
 - [ ] slide crafting - Celia/Greb (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
 - [X] update name to revelio
