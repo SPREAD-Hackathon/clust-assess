@@ -102,6 +102,9 @@ h2 .mk{margin-right:8px}
 .posgrid:has(.poscell:only-child) svg{max-width:360px}
 .poscell{text-align:center}.poscell .pt{font-weight:600;font-size:13px;margin-bottom:2px}
 .psec{cursor:pointer;transition:filter .12s}.psec:hover{filter:brightness(1.12) drop-shadow(0 0 3px rgba(0,0,0,.35))}
+.net3d{height:560px;position:relative;overflow:hidden;touch-action:none;cursor:grab;user-select:none}.net3d.drag{cursor:grabbing}.net3d svg{width:100%;height:100%;display:block}
+.net3dInfo{position:absolute;top:8px;right:8px;max-width:310px;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:8px 11px;font-size:12px;line-height:1.5;box-shadow:0 4px 14px rgba(0,0,0,.14);pointer-events:none;z-index:3}
+.net3dBar{position:absolute;top:8px;left:8px;display:flex;gap:6px;z-index:3}
 #posTip{position:fixed;z-index:60;pointer-events:none;background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:7px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.18);max-width:260px;display:none}
 .secToggle{margin-left:12px;font-size:12px;vertical-align:middle;font-weight:500}
 .pn{display:inline-block;margin:2px 3px 2px 0;padding:0 6px;background:var(--panel2);border-radius:4px;font-size:11.5px;white-space:nowrap}
@@ -206,27 +209,13 @@ section>h2{margin-bottom:12px}
 
 <main>
 <div class="topbar" id="topbar" style="visibility:hidden">
-  <div class="f">Mode
-    <select id="mode" aria-label="Classification mode">
-      <option value="baseline">Reference baseline</option>
-      <option value="pct">Reference percentile</option>
-      <option value="fixed">Fixed thresholds</option>
-    </select></div>
-  <div class="f">Closer than ≥ <b id="pTl">50</b>% of reference
-    <input type="range" id="pT" min="1" max="99" step="1" value="50" aria-label="Reference percentile cut-off"></div>
-  <div class="f">DCJ ≤ <b id="dTl">3</b>
-    <input type="range" id="dT" min="0" max="10" step="1" value="3" aria-label="DCJ threshold"></div>
-  <div class="f">Containment ≥ <b id="cTl">0.70</b>
-    <input type="range" id="cT" min="0" max="1" step="0.05" value="0.7" aria-label="Containment threshold"></div>
-  <div class="f">Subcommunity <select id="fComm" aria-label="Filter by subcommunity"></select></div>
+  <div class="f" id="fCommW">Subcommunity <select id="fComm" aria-label="Filter by subcommunity"></select></div>
   <div class="f" id="fGeoW" hidden>Location <select id="fGeo" aria-label="Filter by location"></select></div>
   <div class="f" id="fHostW" hidden>Host <select id="fHost" aria-label="Filter by host"></select></div>
   <div class="f" id="fDateW" hidden>Year <input type="number" id="fFrom" style="width:76px" aria-label="From year"> – <input type="number" id="fTo" style="width:76px" aria-label="To year"></div>
-  <div class="f"><input type="search" id="fQ" placeholder="Search plasmid…" aria-label="Search plasmid name"></div>
-  <div class="chips" id="fCls" role="group" aria-label="Classification filter"></div>
-  <button id="btnClear">Clear filters</button>
+  <button id="btnClear" hidden>Clear filters</button>
   <div class="sp"></div>
-  <span class="f" id="shown"></span>
+  <span class="f" id="shown" hidden></span>
   <button id="btnPrint">🖨 Print / PDF</button>
 </div>
 
@@ -234,6 +223,23 @@ section>h2{margin-bottom:12px}
 <div id="fatal" role="alert"></div>
 
 <div id="app" style="display:none">
+
+<details class="panel fold" id="clsAdv" style="margin-top:14px"><summary>Classification (advanced) <span class="note" style="margin:0 0 0 8px">how each pair is labelled Outbreak-related, Intermediate or Unrelated; the default is the reference mean of its subcommunity</span></summary>
+<div class="toolrow" style="margin-top:10px">
+    <div class="f">Mode
+      <select id="mode" aria-label="Classification mode">
+        <option value="baseline">Reference baseline</option>
+        <option value="pct">Reference percentile</option>
+        <option value="fixed">Fixed thresholds</option>
+      </select></div>
+    <div class="f">Closer than ≥ <b id="pTl">50</b>% of reference
+      <input type="range" id="pT" min="1" max="99" step="1" value="50" aria-label="Reference percentile cut-off"></div>
+    <div class="f">DCJ ≤ <b id="dTl">3</b>
+      <input type="range" id="dT" min="0" max="10" step="1" value="3" aria-label="DCJ threshold"></div>
+    <div class="f">Containment ≥ <b id="cTl">0.70</b>
+      <input type="range" id="cT" min="0" max="1" step="0.05" value="0.7" aria-label="Containment threshold"></div>
+    <div class="chips" id="fCls" role="group" aria-label="Classification filter"></div>
+</div></details>
 
 <section id="summary">
   <h2>Summary</h2>
@@ -305,6 +311,7 @@ section>h2{margin-bottom:12px}
 <section id="closeness">
   <h2 id="h-closeness">Closeness analysis</h2>
   <div class="toolrow"><label class="f">Measure <select id="zMet" aria-label="Measure"></select></label>
+    <label class="f">Background <select id="zBg" aria-label="z-score background"><option value="file">Database / file pairs (as the analyst)</option><option value="ref">Reference database</option></select></label>
     <label class="f">Close when z ≤ <select id="zCut" aria-label="z-score cutoff"><option value="1">−1 (1 SD closer)</option><option value="1.5">−1.5</option><option value="2">−2</option></select></label>
     <span class="note" id="zNote"></span></div>
   <div class="panel"><h3>Input pairs against the background</h3><div id="chZdist" class="chart"></div></div>
@@ -324,7 +331,7 @@ section>h2{margin-bottom:12px}
     <button class="chip" id="nwBack" style="display:none" title="Go back one step">← Back</button>
     <label class="f">View <select id="nwView" aria-label="Network view"><option value="close">Close pairs</option><option value="all">All pairs</option></select></label>
     <label class="f" id="nwWithinL"><input type="checkbox" id="nwWithin"> Pairs within Pling's threshold (grey)</label>
-    <label class="f">Layout <select id="nwLay"><option value="force">Force (closer = nearer)</option><option value="circular">Circular (by subcommunity)</option></select></label>
+    <label class="f oldOpt">Layout <select id="nwLay"><option value="force">Force (closer = nearer)</option><option value="circular">Circular (by subcommunity)</option></select></label>
     <label class="f"><input type="checkbox" id="nwLbl" checked> Distances on lines</label>
     <label class="f oldOpt"><input type="checkbox" id="nwRel"> Outbreak-related edges only</label>
     <label class="f oldOpt"><input type="checkbox" id="nwNN"> 3 closest partners per plasmid only</label>
@@ -334,7 +341,7 @@ section>h2{margin-bottom:12px}
   </div>
   <p class="note" id="nwCrumb" style="margin:0 0 4px;font-size:13px"></p>
   <p class="note" id="nwNote" style="margin:0 0 8px"></p>
-  <div class="panel"><div id="chNet" class="chart tall"></div></div>
+  <div class="panel" style="position:relative"><div id="chNet" class="chart tall"></div><div id="net3d" class="net3d" hidden></div></div>
   <div class="keyrow" id="nwKey"></div>
   <div class="panel" id="nwDetail" style="margin-top:14px"></div>
 </section>
@@ -382,7 +389,7 @@ section>h2{margin-bottom:12px}
 
 <section id="pairs">
   <h2>Pair explorer</h2>
-  <div class="toolrow"><button id="btnExport">⬇ Export view (CSV)</button><button id="btnExportOb">⬇ Export outbreak-related (CSV)</button></div>
+  <div class="toolrow"><input type="search" id="fQ" placeholder="Search plasmid…" aria-label="Search plasmid name" title="Filters the whole report to the pairs of this plasmid"><button id="btnExport">⬇ Export view (CSV)</button><button id="btnExportOb">⬇ Export outbreak-related (CSV)</button></div>
   <div class="panel tw"><div id="tblPairs"></div></div>
 </section>
 
@@ -550,6 +557,9 @@ pIso12_PT10_Kp4_OXA-48	Q__pIso12_PT10_Kp4_OXA-48	63675	called		pIso12_PT10_Kp4_O
 pIso10_PT8_Ec4_OXA-48	Q__pIso10_PT8_Ec4_OXA-48	69411	called		pIso10_PT8_Ec4_OXA-48	community_0_subcommunity_0	community_0	0.9894	1	15	4	NZ_CP117991.1	4	0.1297	4	1	pIso10_PT8_Ec4_OXA-48	NA	no_baseline
 
 </script>
+<script id="within-data" type="text/plain" data-enc="gzip-base64">
+H4sICDyo7WoC/3dpdGhpbl9wYWlycy50c3YAtJpNT103EIbX8F8azffYyyrKokJqs+ii6uaKkkalKgQJsui/75xz+VKuj8nxuIgFCPG+tmf8jMe+d/9c3t9cfzrg2d3jT3R29eXm5uvt9cO/Z/df/3j55dPV3/Gn24fL69ubP28fzn/+/fD+I6LXiu/i33+6/4Jw+PhrOXy4ksMvv/34g5QXqQO8/vnwWjj+JGfwDqmakYgKsxOUlj6Gfj1c3PFOfQx9aAlSCMaoL+5kliIvinj48BeNrAEQO5iwGLB5cw1kMaAYsg4YQAiBaS1WqHLFloEuBhxR3GsAW2uyCMaK4CS9NWixALP0+Di+K5yUA0uE6PD+8149XTJAoCJxrUKq3hBfosOHi8tZg7XQkxgsjQyWFIsgyrJfBbgh7yGvsbZ75XljuCX0LGI/srsAsJBLqFVWVGnI15D3GO4YYNoMTJGLFmFCcieTGLZr5Z7PMNCejKQouXk16voMY05XnxJ0I0NzJkLvGeVwR8KVi1V1YrLSMxrGHq/gZrQCJeIDUJ16RoM03GkzCsmdNqPsXKtdVLjCjuqIqGwdm1GkrkkQOVYiy0qpVeNs0bEZhevjohnAUlUh2NLbPCnkfn9oRtFrxzJkpWJQgBwcejYpIldmY61SGOILOzajZF5DE5MozNW0oMbh57yN5BxA4aUEtJWHkbnWQjIukcVRrNzYa89oGJmrkYg7liqKAGrdtRpGJr61VoOMfEt3FIpv6Y5SkNatJkpRCLFG9Q0QdmwyFPzmYLltkjpgAoijR44Gp8i5YzMKQXojFKPUW3EkCG5ULGaAfU6MUm/dYhybTBWdo9VT6q3SKPXWVYpTD9fo8ygqrMjjbE75lm9bFzgpRRk3DTftGqXhFO0GKYEtR9Wu0ww6bUjn8dQWnsCntvB8QLV9ZhOq7ZJH1HMOdZN1AqPawllIRbsNxauYgfR8UmezoBRE++TMEKHv+iQxZQgafWCg6nk+pzzK0eNVSDakh3HRvLjrOQ3SY6/PKEz2+oyyZW1nnCX2O6nUaDO46zPKljdDP4qTx4XyGl1MVCOPJPaezyhOeGdARulyvNJbenFzw/iWp/6y7TNKlzUgTlVjxxMvnXk/8KN0WefDxQUZqlVeZnW+gZE8Ak6u1ntOCQTs8ckgYI9PCgFLYCRaBq3wctXQ9kkhAMIizsFLZyLPdw1tnwwRYt00DsNqEE2EkPV8RomwNz45IpgyVS/BaJHajU+qK9oxn1EirMRWk2ILd8hAn46zp1s//3LVEc49YXWEc29ZHeGJj1odl9zrVkc4VXvRmMkjX6wWx9Lzyb13dYRHt5a2Hr46PhNewL7dNJMSviU7Id1bsrOTveUxIdVbsvMTveUyIc1bsvOTvOWST/GTbJ6Ti03ZybnY9MjnYlN2ei42XfK52JSdnotNl3wunqTd/5A0TY/RpKH+0DNn4uZVZdMldwOn6wrFMR/U6rbJaArZehwWW95G4/QNrtCZSubyDSGm4h4dC8SEHl+tT5InE+1jRqECqTlRZFXdNkm9jJ+mbdMj9SzujhBbukR0UFG2XTI3r987k8y9CAm5KxuJIVc+dnUnMU5DnBmsGiNE3x1W2y6p/bgtm4M4UQweiTR4jtsmqdvv8+YapxO1dY3XdEm17K1LvKZLqmFvfXrjZHHS0aYaRTs2w/Lht1pk2yUzF4hpmBB5TAX0GJaTUWdM1tJhKkUsArIUETv/DwAA//8DADkll0DkLQAA
+</script>
 <script>
 "use strict";
 /* ============================================================
@@ -611,7 +621,7 @@ const REF_NOTE = '<p class="note">The reference database is the pling pair table
 const OPT_NOTE = '<p class="note">Pairs where exactly one plasmid is in the reference database are treated as input-to-reference pairs. Optional columns, used when present: <span class="kbd">subcommunity</span>; per-plasmid <span class="kbd">Plasmid A country</span> / <span class="kbd">Plasmid B country</span> (or one <span class="kbd">country</span> column); the same pattern for <span class="kbd">host</span> and <span class="kbd">date</span> (ISO date or year).</p>';
 
 /* ---------- state ---------- */
-const S = { meta:{}, qc:{}, all:[], view:[], grps:[], grpOf:{}, plasmids:[], mode:'baseline', dT:3, cT:0.7, pT:50, nd:{level:'all',comm:null,p:null,pair:null,stack:[]}, pd:{level:'all',sub:null,band:null,stack:[]},
+const S = { zBg:'file', meta:{}, qc:{}, all:[], view:[], grps:[], grpOf:{}, plasmids:[], mode:'baseline', dT:3, cT:0.7, pT:50, nd:{level:'all',comm:null,p:null,pair:null,stack:[]}, pd:{level:'all',sub:null,band:null,stack:[]},
   fComm:'', fQ:'', fCls:new Set(['Outbreak-related','Intermediate','Unrelated']), fGeo:'', fHost:'', fFrom:'', fTo:'' };
 const CLS = ['Outbreak-related','Intermediate','Unrelated'];
 const CLS_META = {
@@ -670,7 +680,9 @@ async function loadData(){
   const a=await loadText('csv-data',CSV_FILE), b=await loadText('ref-data',REF_FILE);
   S.meta.source=a.source; S.meta.bytes=a.text.length; S.meta.refSource=b.source;
   const emb=document.getElementById('inputs-data'), inp=emb&&emb.textContent.trim()?emb.textContent.replace(/^\s+/,''):'';   // optional: the pipeline's inputs.tsv (nearest database plasmid of each input)
-  return [a.text,b.text,inp];
+  const we=document.getElementById('within-data'); let win='';   // optional: db_distributions/within_pairs.tsv.gz, the database pairs the analyst's z-scores are measured against
+  if(we&&we.textContent.trim()){ const raw=we.textContent.replace(/^\s+/,''); win=we.dataset.enc==='gzip-base64'?await gunzipB64(raw):raw; }
+  return [a.text,b.text,inp,win];
 }
 
 /* ---------- reference database ---------- */
@@ -720,7 +732,15 @@ function buildRef(text){
 // distance between two reference plasmids of group g (NaN when the pair is not in the table)
 function refD(g,a,b){ const x=g.idx.get(a), y=g.idx.get(b); if(x===undefined||y===undefined||x===y) return NaN; const v=g.pmap.get(x<y?x*g.names.length+y:y*g.names.length+x); return v===undefined?NaN:v; }
 
-function build(text, refText, inputsText){
+// the database's own pairs (plasmid_1, plasmid_2, subcommunity, dcj, containment): background of the z-scores, grouped by the pipeline's subcommunity id
+function parseWithin(text){
+  const nl=text.indexOf('\n'), head=(nl<0?text:text.slice(0,nl)).replace(/\r$/,''), delim=['\t',';',','].map(x=>[x,head.split(x).length]).sort((x,y)=>y[1]-x[1])[0][0], h=head.split(delim).map(x=>key(x));
+  const ia=h.indexOf('plasmid1'), ib=h.indexOf('plasmid2'), isb=h.indexOf('subcommunity'), id=h.indexOf('dcj'), ic=h.indexOf('containment'); if(ia<0||ib<0||isb<0) return null;
+  const by=new Map(); text.slice(nl+1).split('\n').forEach(l=>{ if(!l) return; const f=l.replace(/\r$/,'').split(delim), k=(f[isb]||'').trim(); if(!k) return;
+    let o=by.get(k); if(!o) by.set(k,o={dcj:[],cont:[]}); const d=id>=0?parseFloat(f[id]):NaN, c=ic>=0?parseFloat(f[ic]):NaN; if(Number.isFinite(d)) o.dcj.push(d); if(Number.isFinite(c)) o.cont.push(c); });
+  return by;
+}
+function build(text, refText, inputsText, withinText){
   const p = parseCSV(text);
   const idx = {};
   for(const [k,names] of Object.entries(COLS)) idx[k] = p.header.findIndex(h => names.includes(key(h)));
@@ -732,7 +752,8 @@ function build(text, refText, inputsText){
   const has = {dcj:idx.dcj>=0, cont:idx.cont>=0, cd:idx.cd>=0, cc:idx.cc>=0, comm:idx.comm>=0, sub:idx.sa>=0||idx.sb>=0};
   S.has = has; S.suppliedBaselines = suppliedBaselines;
   buildRef(refText);
-  S.censPairs=[]; S.fromInputs=0; S.byRef=0; S.inputsTbl=[];
+  S.censPairs=[]; S.fromInputs=0; S.byRef=0; S.inputsTbl=[]; S.within=null;
+  if(withinText) S.within=parseWithin(withinText);
   if(!has.dcj) bad('The results file needs a DCJ column: the reference database holds DCJ distances only.');
   if(has.cont){ has.cont=false; S.contIgnored=true; }   // no reference for containment, so it cannot be judged
   const MD = {}; S.hasMd = {}; for(const f of Object.keys(META_BASES)){ MD[f] = metaIdx(p.header, META_BASES[f]); S.hasMd[f] = MD[f].a>=0 || MD[f].b>=0 || MD[f].s>=0; }
@@ -797,6 +818,7 @@ function build(text, refText, inputsText){
   S.grps = keys.map((k,i)=>({key:k, label:R.groups.has(k)?R.groups.get(k).label:k, i, n:rows.filter(r=>r.grpKey===k).length}));
   const gi = Object.fromEntries(S.grps.map(g=>[g.key,g]));
   rows.forEach((r,i)=>{ r.id=i; r.grp=gi[r.grpKey]; }); S.allRows=rows;
+  S.grps.forEach(g=>Object.defineProperty(g,'fl',{value:new Set(rows.filter(r=>r.grp===g).flatMap(r=>[r.sa,r.sb,r.gc]).filter(Boolean)),writable:true,enumerable:false,configurable:true}));
   S.cross.forEach(r=>{ r.grp=gi[r.grpKey]||null; });
   // baselines come from the reference database: the subcommunity's own reference pairs
   S.derived=[]; S.unmatched=[];
@@ -1052,9 +1074,16 @@ function clusterOrder(names,dm){
 // z = (d - mean) / SD against a background of the same measure: the subcommunity's reference pairs when the reference has it
 // (DCJ, and containment when the reference table has that column), otherwise the input pairs of the subcommunity themselves.
 const ZL=[1,1.5,2], zMeasure=kind=>kind==='cont'?'cont':kind==='mash'?'mash':'dcj', zVal=(r,m)=>m==='cont'?r.contRaw:m==='mash'?r.mashRaw:r.dcj;
-const zBack=(g,m)=>{ const rg=g&&g.ref; if(rg&&m==='dcj'&&Number.isFinite(rg.sd)&&rg.sd>0) return {mean:rg.md,sd:rg.sd,src:'reference'};
-  if(rg&&m==='cont'&&Number.isFinite(rg.csd)&&rg.csd>0) return {mean:rg.cm,sd:rg.csd,src:'reference'};
-  const v=[...new Set((S.allRows||[]).filter(r=>r.grp===g))].map(r=>zVal(r,m)).filter(Number.isFinite); if(v.length<MIN_REF_PAIRS) return null; const mu=mean(v), sd=sdArr(v,mu); return sd>0?{mean:mu,sd,src:'your input pairs'}:null; };
+const zBack=(g,m,mode)=>{ const rg=g&&g.ref; mode=mode||S.zBg;
+  const refB=()=>{ if(rg&&m==='dcj'&&Number.isFinite(rg.sd)&&rg.sd>0) return {mean:rg.md,sd:rg.sd,src:'reference'};
+    if(rg&&m==='cont'&&Number.isFinite(rg.csd)&&rg.csd>0) return {mean:rg.cm,sd:rg.csd,src:'reference'}; return null; };
+  if(mode==='ref'){ const r=refB(); if(r) return r; }
+  if(S.within&&g&&g.fl&&(m==='dcj'||m==='cont')){ const vals=[]; g.fl.forEach(k=>{ const o=S.within.get(k); if(o) (m==='dcj'?o.dcj:o.cont).forEach(v=>vals.push(v)); });
+    if(vals.length>=MIN_REF_PAIRS){ const mu=mean(vals), sd=sdArr(vals,mu); if(sd>0) return {mean:mu,sd,src:'database pairs',vals}; } }
+  // the pairs in this file for the subcommunity: input pairs plus input-to-reference pairs (the analyst's "database pairs ... including copies of the inputs")
+  const v=((S.allRows||[]).filter(r=>r.grp===g)).concat((S.cross||[]).filter(r=>r.grp===g)).map(r=>zVal(r,m)).filter(Number.isFinite);
+  if(v.length>=MIN_REF_PAIRS){ const mu=mean(v), sd=sdArr(v,mu); if(sd>0) return {mean:mu,sd,src:'pairs in this file',vals:v}; }
+  return refB(); };
 function renderHeat(){
   const t=T();
   if(!S.view.length){ empty('chHeat'); $('hmPanC').hidden=true; $('hmPanM').hidden=true; return; }
@@ -1100,7 +1129,7 @@ function renderHeat(){
     const hi=Number.isFinite(cap)?Math.min(cap,vmax>0?vmax:cap):(vmax>0?vmax:1), stops=Array.from({length:17},(_,q)=>rampAt(1-Math.pow(q/16,gam)));
     const vm=kind==='pos'?{type:'piecewise',seriesIndex:0,orient:'vertical',right:12,top:'center',textStyle:{color:t.muted},pieces:BANDS.map((b,j)=>j===0?{gte:95,lte:100,color:b[1],label:'closer than 95%'}:j===1?{gte:75,lt:95,color:b[1],label:'75–95%'}:j===2?{gte:25,lt:75,color:b[1],label:'typical (25–75%)'}:j===3?{gte:5,lt:25,color:b[1],label:'5–25%'}:{gte:0,lt:5,color:b[1],label:'looser than 95%'})}
       :{show:false,min:0,max:hi,dimension:2,seriesIndex:0,inRange:{color:stops},outOfRange:{color:[stops[16]]}};
-    const zs=[...zb.values()].filter(Boolean), z0=zs[0], one=zs.length===1, zsrc=zs.every(x=>x.src==='reference')?'the reference':zs.every(x=>x.src!=='reference')?'your input pairs':'reference / input pairs';
+    const zs=[...zb.values()].filter(Boolean), z0=zs[0], one=zs.length===1, zsrc=[...new Set(zs.map(x=>x.src==='reference'?'the reference':x.src))].join(' / ');
     const zl=!zs.length?['z-score: no background']:[...ZL.map((c,q)=>'●'.repeat(q+1)+' z ≤ −'+c+(one?(z0.mean-c*z0.sd>=0?' (d ≤ '+(+(z0.mean-c*z0.sd).toPrecision(3))+')':' (below 0: none)'):'')),'vs '+zsrc+(one?'':', per subcommunity')];
     const bar=kind==='pos'?[]:cbar(hi,stops,thr,vmax>hi,kind==='cont'?'containment distance':kind==='mash'?'Mash distance':'DCJ distance',Number.isFinite(thr)&&thr>hi?['Pling threshold '+thr+': off scale',...zl]:zl);
     ch(id).setOption(base({
@@ -1130,6 +1159,7 @@ const Z0=-3.5, ZS=.5, ZN=14;   // 14 bins of 0.5 SD from -3.5 to 3.5; the end bi
 const zBin=z=>Math.min(ZN-1,Math.max(0,Math.floor((z-Z0)/ZS)));
 const zLab=k=>{ const v=Z0+k*ZS; return (v<0?'−':'')+Math.abs(v); };
 const ZMN={dcj:'DCJ',cont:'Containment',mash:'Mash'};
+const altClose=(m,c)=>{ const mode=S.zBg==='file'?'ref':'file', zb=new Map(); let n=0; S.grps.forEach(g=>zb.set(g,zBack(g,m,mode))); S.view.forEach(r=>{ const b=zb.get(r.grp), v=zVal(r,m); if(b&&Number.isFinite(v)&&(v-b.mean)/b.sd<=-c) n++; }); return n; };
 function renderClose(){
   const t=T(), sel=$('zMet'), mets=['dcj',...(S.hasRaw&&S.hasRaw.cont?['cont']:[]),...(S.hasRaw&&S.hasRaw.mash?['mash']:[])];
   if(sel.dataset.n!==mets.join()){ sel.innerHTML=mets.map(m=>`<option value="${m}">${ZMN[m]}</option>`).join(''); sel.dataset.n=mets.join(); }
@@ -1139,12 +1169,13 @@ function renderClose(){
   S.view.forEach(r=>{ const g=r.grp; if(!g) return; if(!used.has(g)) used.set(g,zBack(g,m)); const b=used.get(g), v=zVal(r,m); if(b&&Number.isFinite(v)) zr.push({r,z:(v-b.mean)/b.sd,v}); });
   if(!zr.length){ empty('chZdist','No background for this measure (it needs at least '+MIN_REF_PAIRS+' pairs).'); $('tblGroups').innerHTML=''; $('zNote').textContent=''; return; }
   const nI=zr.length, close=zr.filter(o=>o.z<=-c), inp=new Array(ZN).fill(0); zr.forEach(o=>inp[zBin(o.z)]++);
-  const usedB=[...used].filter(([g,b])=>b), refOnly=m==='dcj'&&usedB.every(([g,b])=>b.src==='reference');
+  const usedB=[...used].filter(([g,b])=>b), refOnly=m==='dcj'&&usedB.every(([g,b])=>b.src==='reference'), fileOnly=usedB.length&&usedB.every(([g,b])=>b.vals);
   let bg, bgName;
-  if(refOnly){ bg=new Array(ZN).fill(0); let tot=0; usedB.forEach(([g,b])=>{ const h=g.ref.h; h.vals.forEach((v,i)=>{ bg[zBin((v-b.mean)/b.sd)]+=h.cnt[i]; tot+=h.cnt[i]; }); }); bg=bg.map(x=>x/tot); bgName='reference pairs'; }
-  else { bg=Array.from({length:ZN},(_,k)=>normCdf(Z0+(k+1)*ZS)-normCdf(Z0+k*ZS)); bg[0]=normCdf(Z0+ZS); bg[ZN-1]=1-normCdf(Z0+(ZN-1)*ZS); bgName=usedB.every(([g,b])=>b.src==='reference')?'normal curve (mean 0, SD 1)':'normal curve (the background is your own input pairs)'; }
+  if(fileOnly){ bg=new Array(ZN).fill(0); let tot=0; usedB.forEach(([g,b])=>b.vals.forEach(v=>{ bg[zBin((v-b.mean)/b.sd)]++; tot++; })); bg=bg.map(x=>x/tot); bgName=usedB.every(([g,b])=>b.src==='database pairs')?'database pairs':'pairs in this file'; }
+  else if(refOnly){ bg=new Array(ZN).fill(0); let tot=0; usedB.forEach(([g,b])=>{ const h=g.ref.h; h.vals.forEach((v,i)=>{ bg[zBin((v-b.mean)/b.sd)]+=h.cnt[i]; tot+=h.cnt[i]; }); }); bg=bg.map(x=>x/tot); bgName='reference pairs'; }
+  else { bg=Array.from({length:ZN},(_,k)=>normCdf(Z0+(k+1)*ZS)-normCdf(Z0+k*ZS)); bg[0]=normCdf(Z0+ZS); bg[ZN-1]=1-normCdf(Z0+(ZN-1)*ZS); bgName='normal curve (mean 0, SD 1)'; }
   const one=usedB.length===1?usedB[0][1]:null, cutTxt=one?` (${nm} ≤ ${fmt(one.mean-c*one.sd,3)})`:'';
-  $('zNote').textContent=`${close.length} of ${nI} input pairs (${(100*close.length/nI).toFixed(0)}%) have z ≤ −${c}${cutTxt}. Background: ${usedB.every(([g,b])=>b.src==='reference')?'the reference pairs of their subcommunity':usedB.every(([g,b])=>b.src!=='reference')?'the input pairs of their subcommunity':'reference pairs where available, otherwise input pairs'}.`;
+  $('zNote').textContent=`${close.length} of ${nI} input pairs (${(100*close.length/nI).toFixed(0)}%) have z ≤ −${c}${cutTxt}. Background: ${[...new Set(usedB.map(([g,b])=>b.src))].map(x=>({reference:'the reference pairs of their subcommunity','database pairs':'the database pairs of their subcommunity (db_distributions)','pairs in this file':'the pairs in this file (input pairs and input–reference pairs)'}[x])).join(' and ')}. With ${S.zBg==='file'?'the reference database':'the pairs in this file'}: ${altClose(m,c)} of ${nI}.`;
   const labs=Array.from({length:ZN},(_,k)=>zLab(k)), share=a=>a.map(x=>x/nI);
   ch('chZdist').setOption(base({
     grid:{left:58,right:24,top:36,bottom:64},
@@ -1162,7 +1193,8 @@ function renderClose(){
   const par=new Map(), fd=x=>{ while(par.get(x)!==x){ par.set(x,par.get(par.get(x))); x=par.get(x); } return x; };
   pairs.forEach(q=>{ [q.a,q.b].forEach(n=>{ if(!par.has(n)) par.set(n,n); }); par.set(fd(q.a),fd(q.b)); });
   const comps=new Map(); par.forEach((_,n)=>{ const r0=fd(n); (comps.get(r0)||comps.set(r0,{m:[],d:[],g:null}).get(r0)).m.push(n); });
-  pairs.forEach(q=>{ const o=comps.get(fd(q.a)); o.d.push(q.d); o.g=o.g||q.g; });
+  pairs.forEach(q=>{ const o=comps.get(fd(q.a)); o.g=o.g||q.g; });
+  { const ap=S.allRows.concat(S.cross); comps.forEach(o=>{ const set=new Set(o.m); o.d=ap.filter(r=>set.has(r.a)&&set.has(r.b)).map(r=>zVal(r,m)).filter(Number.isFinite); }); }   // max and median over every pair inside the group
   const inSet=n=>!S.ref.set.has(n), rowsG=[...comps.values()].sort((x,y)=>y.m.length-x.m.length);
   const med=a=>{ const b=[...a].sort((x,y)=>x-y), h=b.length>>1; return b.length%2?b[h]:(b[h-1]+b[h])/2; };
   $('tblGroups').innerHTML=rowsG.length?`<table><thead><tr><th>Group</th><th>Subcommunity</th><th>Plasmids</th><th>Inputs</th><th>Reference</th><th>Max ${esc(nm)}</th><th>Median ${esc(nm)}</th><th>Members</th></tr></thead><tbody>`+rowsG.map((o,k)=>{
@@ -1215,6 +1247,97 @@ function drawHulls(cn,nodes){
 }
 
 
+
+/* ---------- 3D network: drag to rotate, scroll to zoom, details pinned to the top-right corner ---------- */
+const N3={st:null,raf:0}, NETLBL='#d9730d';   // distance labels on the network lines: a distinct colour instead of a larger font
+function show3d(on){
+  $('chNet').style.display=on?'none':''; $('net3d').hidden=!on;
+  if(!on){ if(N3.raf) cancelAnimationFrame(N3.raf); N3.raf=0; N3.st=null; ch('chNet').resize(); }
+}
+// Layout: every close group gets its own small force-directed cluster (close pairs pull, all pairs repel);
+// the clusters sit on an inner shell and the plasmids in no close group on an outer shell, so nothing overlaps
+function frSmall(m,pairs,K,iters){
+  const P=new Float64Array(m*3), F=new Float64Array(m*3);
+  for(let i=0;i<m;i++){ const y=1-2*(i+.5)/m, r=Math.sqrt(Math.max(0,1-y*y)), th=i*2.399963; P[3*i]=r*Math.cos(th)*K*.6; P[3*i+1]=y*K*.6; P[3*i+2]=r*Math.sin(th)*K*.6; }
+  for(let it=0;it<iters;it++){
+    F.fill(0); const temp=K*.5*(1-it/iters)+.5;
+    for(let i=0;i<m;i++) for(let j=i+1;j<m;j++){ let dx=P[3*i]-P[3*j], dy=P[3*i+1]-P[3*j+1], dz=P[3*i+2]-P[3*j+2], d2=dx*dx+dy*dy+dz*dz;
+      if(d2<1e-6){ dx=Math.random()-.5; dy=Math.random()-.5; dz=Math.random()-.5; d2=dx*dx+dy*dy+dz*dz; }
+      const f=K*K/d2; F[3*i]+=dx*f; F[3*i+1]+=dy*f; F[3*i+2]+=dz*f; F[3*j]-=dx*f; F[3*j+1]-=dy*f; F[3*j+2]-=dz*f; }
+    pairs.forEach(([a,b])=>{ const dx=P[3*a]-P[3*b], dy=P[3*a+1]-P[3*b+1], dz=P[3*a+2]-P[3*b+2], f=Math.sqrt(dx*dx+dy*dy+dz*dz)/K;
+      F[3*a]-=dx*f; F[3*a+1]-=dy*f; F[3*a+2]-=dz*f; F[3*b]+=dx*f; F[3*b+1]+=dy*f; F[3*b+2]+=dz*f; });
+    for(let i=0;i<m;i++){ F[3*i]-=P[3*i]*.08; F[3*i+1]-=P[3*i+1]*.08; F[3*i+2]-=P[3*i+2]*.08;
+      const mg=Math.hypot(F[3*i],F[3*i+1],F[3*i+2])||1, k=Math.min(mg,temp)/mg; P[3*i]+=F[3*i]*k; P[3*i+1]+=F[3*i+1]*k; P[3*i+2]+=F[3*i+2]*k; }
+  }
+  let cx=0,cy=0,cz=0; for(let i=0;i<m;i++){ cx+=P[3*i]; cy+=P[3*i+1]; cz+=P[3*i+2]; } cx/=m; cy/=m; cz/=m;
+  let rho=0; for(let i=0;i<m;i++){ P[3*i]-=cx; P[3*i+1]-=cy; P[3*i+2]-=cz; rho=Math.max(rho,Math.hypot(P[3*i],P[3*i+1],P[3*i+2])); }
+  return {P,rho};
+}
+function forceLayout3d(n,E){
+  const par=Array.from({length:n},(_,i)=>i), fd=x=>{ while(par[x]!==x){ par[x]=par[par[x]]; x=par[x]; } return x; };
+  E.forEach(x=>{ if(x.e.close) par[fd(x.a)]=fd(x.b); });
+  const comp=new Map(); for(let i=0;i<n;i++){ const r=fd(i); (comp.get(r)||comp.set(r,[]).get(r)).push(i); }
+  const groups=[...comp.values()].filter(a=>a.length>1).sort((a,b)=>b.length-a.length), singles=[...comp.values()].filter(a=>a.length===1).map(a=>a[0]);
+  const fib=(k,m,R)=>{ if(m<=1) return [0,0,0]; const y=1-2*(k+.5)/m, r=Math.sqrt(1-y*y), th=k*2.399963; return [r*Math.cos(th)*R,y*R,r*Math.sin(th)*R]; };
+  const P=new Float64Array(n*3), Rg=groups.length<=1?0:Math.min(90,40+10*groups.length);
+  groups.forEach((a,k)=>{ const loc=new Map(a.map((v,i)=>[v,i])), pairs=E.filter(x=>x.e.close&&loc.has(x.a)&&loc.has(x.b)).map(x=>[loc.get(x.a),loc.get(x.b)]), {P:Q}=frSmall(a.length,pairs,48,160), c=fib(k,groups.length,Rg);
+    a.forEach((v,i)=>{ P[3*v]=c[0]+Q[3*i]; P[3*v+1]=c[1]+Q[3*i+1]; P[3*v+2]=c[2]+Q[3*i+2]; }); });
+  const Rs=groups.length?Math.max(Rg+45,95):70; singles.forEach((v,k)=>{ const c=fib(k,singles.length,Rs); P[3*v]=c[0]; P[3*v+1]=c[1]; P[3*v+2]=c[2]; });
+  let R=1; for(let i=0;i<n;i++) R=Math.max(R,Math.hypot(P[3*i],P[3*i+1],P[3*i+2])); for(let i=0;i<3*n;i++) P[i]*=100/R;
+  return P;
+}
+function render3d(nodes,edges,tipOf,opts){
+  if(N3.raf) cancelAnimationFrame(N3.raf);
+  const host=$('net3d'), t=T(), n=nodes.length, idx=new Map(nodes.map((x,i)=>[x.name,i]));
+  const E=edges.map(e=>({a:idx.get(e.a),b:idx.get(e.b),e})).filter(x=>x.a!==undefined&&x.b!==undefined);
+  const st=N3.st={yaw:.6,pitch:-.3,zoom:1,hover:null,auto:false,drag:null,P:forceLayout3d(n,E),E,nodes,t};
+  const hint='Drag to rotate · scroll to zoom · hover a plasmid or line for details here';
+  host.innerHTML=`<div class="net3dBar"><button class="chip" id="n3Reset" type="button" title="Back to the default view">Reset view</button><button class="chip" id="n3Auto" type="button" aria-pressed="false" title="Rotate slowly">Auto-rotate</button></div><div class="net3dInfo" id="n3Info" style="color:${t.muted}">${hint}</div><svg id="n3Svg" role="img" aria-label="3D network of close pairs"></svg>`;
+  const svg=$('n3Svg'), info=$('n3Info'), adj=new Set();
+  const draw=()=>{ if(N3.st!==st) return;
+    const W=host.clientWidth||800, H=host.clientHeight||560; svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+    const cyw=Math.cos(st.yaw), syw=Math.sin(st.yaw), cp=Math.cos(st.pitch), sp=Math.sin(st.pitch), base=Math.min(W,H)/2/125*st.zoom, D=420, P=st.P, pr=new Array(n);
+    for(let i=0;i<n;i++){ const x=P[3*i], y=P[3*i+1], z=P[3*i+2], x1=x*cyw+z*syw, z1=-x*syw+z*cyw, y1=y*cp-z1*sp, z2=y*sp+z1*cp, f=D/(D+z2);
+      pr[i]={x:W/2+x1*f*base,y:H/2+y1*f*base,z:z2,f,near:Math.min(1,Math.max(0,.5-z2/240))}; }
+    const hv=st.hover, hn=hv&&hv.kind==='n'?hv.k:-1, dim=hv?.2:1;
+    const isAdj=(a,b)=>hn>=0&&(a===hn||b===hn), out=[];
+    // axes gizmo
+    [['#d9534f',[1,0,0]],['#5cb85c',[0,1,0]],['#5b9bd5',[0,0,1]]].forEach(([c,[ax,ay,az]])=>{ const x1=ax*cyw+az*syw, z1=-ax*syw+az*cyw, y1=ay*cp-z1*sp; out.push(`<line x1="44" y1="${H-44}" x2="${44+x1*26}" y2="${H-44+y1*26}" stroke="${c}" stroke-width="2" opacity=".7"/>`); });
+    const es=st.E.map((x,k)=>({x,k,z:(pr[x.a].z+pr[x.b].z)/2})).sort((u,v)=>v.z-u.z);
+    es.forEach(({x,k})=>{ const A=pr[x.a], B=pr[x.b], e=x.e, near=(A.near+B.near)/2, hl=hv&&((hv.kind==='e'&&hv.k===k)||isAdj(x.a,x.b));
+      const col=e.close?t.text:'#c3c2b7', w=(e.close?1.2+3.6*e.cl:.9)*(.6+.6*near), op=(e.close?.35+.5*e.cl:.5)*(.45+.55*near)*(hv&&!hl?dim:1);
+      out.push(`<line x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}" stroke="${col}" stroke-width="${(hl?w+1.6:w).toFixed(2)}" stroke-opacity="${hl?1:op.toFixed(2)}"${e.cross?' stroke-dasharray="6 4"':''} stroke-linecap="round"/>`);
+      if(e.close) out.push(`<line data-e="${k}" x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}" stroke="transparent" stroke-width="11" style="cursor:pointer"/>`);
+      if(opts.showE&&e.lbl) out.push(`<text x="${((A.x+B.x)/2).toFixed(1)}" y="${((A.y+B.y)/2-3).toFixed(1)}" font-size="10" font-weight="600" text-anchor="middle" fill="${NETLBL}" stroke="${t.panel}" stroke-width="3" paint-order="stroke" opacity="${(.4+.6*near).toFixed(2)}">${esc(e.lbl)}</text>`); });
+    const ns=nodes.map((x,i)=>({x,i,z:pr[i].z})).sort((u,v)=>v.z-u.z);
+    ns.forEach(({x,i})=>{ const q=pr[i], r=(x.k==='ref'?6:5+Math.min(10,x.deg*1.5))*q.f*Math.min(1.5,Math.max(.75,st.zoom)), on=!hv||i===hn||(hn>=0&&adj.has(i)), op=(.5+.5*q.near)*(on?1:dim);
+      const fill=x.k==='ref'?x.color+'88':x.color, stroke=x.ring||(x.k==='ref'?x.color:t.panel);
+      out.push(`<circle data-n="${i}" cx="${q.x.toFixed(1)}" cy="${q.y.toFixed(1)}" r="${r.toFixed(1)}" fill="${fill}" stroke="${stroke}" stroke-width="${x.ring?3:1.6}" opacity="${op.toFixed(2)}" style="cursor:pointer"/>`);
+      if(opts.showN||i===hn) out.push(`<text x="${(q.x+r+4).toFixed(1)}" y="${(q.y+4).toFixed(1)}" font-size="11" fill="${x.k==='ref'?t.muted:t.text}" stroke="${t.panel}" stroke-width="3" paint-order="stroke" opacity="${(op*.9).toFixed(2)}" pointer-events="none">${esc(x.name)}</text>`); });
+    svg.innerHTML=out.join('');
+  };
+  let pending=0; const redraw=()=>{ if(pending) return; pending=requestAnimationFrame(()=>{ pending=0; draw(); }); };
+  N3.redraw=redraw;
+  const setHover=h=>{ const same=(!h&&!st.hover)||(h&&st.hover&&h.kind===st.hover.kind&&h.k===st.hover.k); if(same) return;
+    st.hover=h; adj.clear(); if(h&&h.kind==='n') st.E.forEach(x=>{ if(x.a===h.k) adj.add(x.b); if(x.b===h.k) adj.add(x.a); });
+    info.innerHTML=h?tipOf(h.kind,h.k):hint; info.style.color=h?t.text:t.muted; redraw(); };
+  const pick=e=>{ const el=e.target.closest&&e.target.closest('[data-n],[data-e]'); return el?(el.dataset.n!==undefined?{kind:'n',k:+el.dataset.n}:{kind:'e',k:+el.dataset.e}):null; };
+  svg.addEventListener('pointerdown',e=>{ st.drag={x:e.clientX,y:e.clientY,moved:false,tgt:pick(e)}; host.classList.add('drag'); svg.setPointerCapture&&svg.setPointerCapture(e.pointerId); });
+  svg.addEventListener('pointermove',e=>{ const d=st.drag;
+    if(d){ const dx=e.clientX-d.x, dy=e.clientY-d.y; if(Math.abs(dx)+Math.abs(dy)>3) d.moved=true; if(d.moved){ st.yaw+=dx*.008; st.pitch=Math.max(-1.45,Math.min(1.45,st.pitch+dy*.008)); d.x=e.clientX; d.y=e.clientY; redraw(); } return; }
+    setHover(pick(e)); });
+  const up=e=>{ const d=st.drag; st.drag=null; host.classList.remove('drag'); if(d&&!d.moved&&d.tgt){ if(d.tgt.kind==='n') opts.onNode(d.tgt.k); else opts.onEdge(d.tgt.k); } };
+  svg.addEventListener('pointerup',up); svg.addEventListener('pointercancel',()=>{ st.drag=null; host.classList.remove('drag'); });
+  svg.addEventListener('pointerleave',()=>{ if(!st.drag) setHover(null); });
+  svg.addEventListener('wheel',e=>{ e.preventDefault(); st.zoom=Math.max(.4,Math.min(4,st.zoom*Math.exp(-e.deltaY*.0012))); redraw(); },{passive:false});
+  svg.addEventListener('dblclick',()=>{ Object.assign(st,{yaw:.6,pitch:-.3,zoom:1}); redraw(); });
+  $('n3Reset').onclick=()=>{ Object.assign(st,{yaw:.6,pitch:-.3,zoom:1}); redraw(); };
+  $('n3Auto').onclick=e=>{ st.auto=!st.auto; e.currentTarget.setAttribute('aria-pressed',String(st.auto)); };
+  const loop=()=>{ if(N3.st!==st) return; if(st.auto&&!st.drag){ st.yaw+=.006; draw(); } N3.raf=requestAnimationFrame(loop); };
+  draw(); N3.raf=requestAnimationFrame(loop);
+}
+addEventListener('resize',()=>{ if(N3.st&&N3.redraw) N3.redraw(); });
+
 /* ---------- close-pair network: only the close pairs are drawn, joined plasmids form close groups ---------- */
 function syncNetOpts(){
   const close=$('nwView').value==='close', all=S.nd.level==='all';
@@ -1223,12 +1346,13 @@ function syncNetOpts(){
 }
 function renderNetClose(){
   const id='chNet', t=T(), c=+$('zCut').value||1, circ=$('nwLay').value==='circular', showW=$('nwWithin').checked;
-  const rows=S.view, many=S.grps.length>1, zb=new Map(); S.grps.forEach(g=>zb.set(g,zBack(g,'dcj')));
-  const zOf=r=>{ const b=zb.get(r.grp); return b?(r.dcj-b.mean)/b.sd:NaN; };
+  const mm=$('zMet').value||'dcj', rows=S.view, many=S.grps.length>1, zb=new Map(); S.grps.forEach(g=>zb.set(g,zBack(g,mm)));
+  const val=r=>zVal(r,mm), thr=mm==='dcj'?PLING_DCJ:mm==='cont'?PLING_CONT:-1, nmM=ZMN[mm], vtxt=r=>mm==='dcj'?String(r.dcj):fmt(val(r),3);
+  const zOf=r=>{ const b=zb.get(r.grp), v=val(r); return b&&Number.isFinite(v)?(v-b.mean)/b.sd:NaN; };
   const PL=Object.fromEntries(S.plasmids.map(p=>[p.name,p])), inNames=new Set(); rows.forEach(r=>{ inNames.add(r.a); inNames.add(r.b); });
-  if(!rows.length){ $('nwNote').textContent=''; $('nwKey').innerHTML=''; renderNetDetail(); return empty(id); }
+  if(!rows.length){ show3d(false); $('nwNote').textContent=''; $('nwKey').innerHTML=''; renderNetDetail(); return empty(id); }
   const E=[], refG=new Map();
-  rows.forEach(r=>{ const z=zOf(r), close=z<=-c; if(close||(showW&&r.dcj<=PLING_DCJ)) E.push({r,z,close,k:'in'}); });
+  rows.forEach(r=>{ const z=zOf(r), close=z<=-c; if(close||(showW&&val(r)<=thr)) E.push({r,z,close,k:'in'}); });
   S.cross.forEach(r=>{ if(!inNames.has(r.a)||!r.grp) return; const z=zOf(r); if(z<=-c){ E.push({r,z,close:true,k:'x'}); refG.set(r.b,r.grp); } });
   // close groups: connected sets of close pairs
   const par=new Map(), fd=x=>{ while(par.get(x)!==x){ par.set(x,par.get(par.get(x))); x=par.get(x); } return x; };
@@ -1246,43 +1370,29 @@ function renderNetClose(){
   const touched=new Set(); E.forEach(e=>{ touched.add(e.r.a); touched.add(e.r.b); }); const nIso=[...inNames].filter(n=>!touched.has(n)).length;
   $('nwNote').innerHTML=`${inNames.size} input plasmids · ${nClose} close pair${nClose===1?'':'s'} (z ≤ −${c}) · ${groups.length} close group${groups.length===1?'':'s'}${nWithin?` · ${nWithin} more within Pling's threshold`:''}${refG.size?` · ${refG.size} reference plasmid${refG.size===1?'':'s'} linked`:''}${nIso?` · ${nIso} with no close${showW?' or related':''} partner`:''} · About this view${infoBtn('refProv:net')}`;
   REFPROV.net=['About this network view',
-    `Only close pairs are drawn: input pairs whose DCJ is at least ${c} standard deviation${c===1?'':'s'} below the mean of the reference pairs of their subcommunity (the same cutoff as the Closeness analysis). Faint grey lines are pairs that are within Pling's DCJ threshold (${PLING_DCJ}) but not close.`,
+    `Only close pairs are drawn: pairs whose ${nmM} is at least ${c} standard deviation${c===1?'':'s'} below the mean of the background (the same measure, background and cutoff as the Closeness analysis). Faint grey lines are pairs within Pling's ${nmM} threshold but not close.`,
     'Click a plasmid to see all its pairs, or a line for the pair. Switch the View to All pairs for the previous network with every pair.',
     'Reference plasmids appear only when a close pair links them to one of your plasmids (dashed line).',
     ['What is drawn','How to use it','Reference']];
   const showN=nodes.length<=60, showE=$('nwLbl').checked&&nClose<=40;
   const kitem=(sw,tx)=>keyItem(sw,tx);
-  $('nwKey').innerHTML=[kitem(`<i class="ln" style="border-top:4px solid ${t.text}"></i>`,'dark, thick line = close pair; darker and thicker = closer (z)'),kitem(lineSw('#c3c2b7','solid'),"faint grey line = within Pling's threshold, not close"),
+  $('nwKey').innerHTML=[kitem(`<i class="ln" style="border-top:4px solid ${t.text}"></i>`,'dark, thick line = close pair; darker and thicker = closer (z); orange number = its distance'),kitem(lineSw('#c3c2b7','solid'),"faint grey line = within Pling's threshold, not close"),
     ...(refG.size?[kitem(lineSw(t.text,'dashed'),'dashed line = input–reference pair'),kitem(`<i class="sw" style="background:${REFC};border:1.5px solid ${REFB}"></i>`,'light node = reference plasmid')]:[]),
-    kitem(`<i class="sw" style="background:${catColor(0)}"></i><i class="sw" style="background:${catColor(1)}"></i>`,'node colour and dashed outline = close group'),kitem('<i class="sw" style="background:#b8bcc4"></i>','grey node = in no close group'),
+    kitem(`<i class="sw" style="background:${catColor(0)}"></i><i class="sw" style="background:${catColor(1)}"></i>`,'node colour = close group (drag to rotate, scroll to zoom)'),kitem('<i class="sw" style="background:#b8bcc4"></i>','grey node = in no close group'),
     ...(many?[kitem('<i class="sw" style="background:#fff;border:3px solid '+catColor(0)+'"></i>','node ring = subcommunity')]:[]),
     `<span>About the lines and nodes${infoBtn('refProv:net')}</span>`].join('');
-  const dist=r=>'DCJ '+r.dcj;
-  $(id).style.height='560px'; ch(id).resize();
-  ch(id).setOption(base({
-    tooltip:{...base().tooltip,formatter:p=>{
-      if(p.dataType==='edge'){ const e=p.data.e, r=e.r; return `<b>${esc(r.a)} ↔ ${esc(r.b)}</b>${e.k==='x'?' <span style="opacity:.6">input–reference</span>':''}<br>${dist(r)} · z = ${fmt(e.z,2)}${e.close?' (close)':" (within Pling's threshold, not close)"}${Number.isFinite(r.cp)?`<br><b>Closer than ${fmt(r.cp,0)}% of the reference pairs</b>`:''}`; }
-      const d=p.data;
-      if(d.kind==='ref') return `<b>${esc(d.name)}</b> <span style="opacity:.6">reference plasmid</span><br>Subcommunity ${esc(refG.get(d.name).label)}${d.cg>=0?`<br>Close group ${d.cg+1}`:''}`;
-      const q=PL[d.name]; return `<b>${esc(q.name)}</b> <span style="opacity:.6">input plasmid</span><br>Subcommunity ${esc(q.grp.label)}<br>${d.cg>=0?`Close group ${d.cg+1}`:'In no close group'} · ${d.deg} close pair(s)<br>Mean DCJ ${fmt(q.meanDcj)}${Number.isFinite(q.refPct)?` (closer than ${fmt(q.refPct,0)}% of reference pairs)`:''}`; }},
-    series:[{type:'graph',top:20,layout:circ?'circular':'force',circular:{rotateLabel:true},roam:true,draggable:!circ,
-      force:{repulsion:nodes.length>60?110:nodes.length>30?200:260,edgeLength:[40,150],gravity:.25,layoutAnimation:false},
-      label:{show:showN,position:circ?'outside':'right',color:t.text,fontSize:11},labelLayout:{hideOverlap:true},
-      edgeLabel:{show:showE,fontSize:10,color:t.text,textBorderColor:t.panel,textBorderWidth:3,formatter:p=>p.data.lbl||''},
-      emphasis:{focus:'adjacency',lineStyle:{width:6},edgeLabel:{show:true}},
-      data:nodes.map(x=>{ const col=x.cg>=0?catColor(x.cg):'#b8bcc4', dg=deg[x.name]||0;
-        return x.k==='in'?{name:x.name,kind:'in',cg:x.cg,deg:dg,symbolSize:12+Math.min(24,dg*3),itemStyle:{color:col,borderColor:many?catColor(PL[x.name].grp.i):t.panel,borderWidth:many?3:1.5}}
-          :{name:x.name,kind:'ref',cg:x.cg,symbolSize:12,itemStyle:{color:col+'66',borderColor:col,borderWidth:1.8},label:{color:t.muted,fontSize:10}}; }),
-      edges:E.map(e=>{ const cl=e.close?Math.min(1,Math.max(0,-e.z/3)):0;
-        return {source:e.r.a,target:e.r.b,kind:e.k,r:e.r,e,value:e.close?.3+cl:.04,lbl:e.close&&e.k==='in'?String(e.r.dcj):'',
-          lineStyle:e.close?{color:t.text,width:1.4+4*cl,opacity:.4+.5*cl,type:e.k==='x'?'dashed':'solid',curveness:circ?.15:.03}:{color:'#c3c2b7',width:1,opacity:.55,curveness:circ?.15:.03}}; })}]
-  }),true);
-  const cn=ch(id); cn.off('click'); cn.off('finished'); cn.off('graphRoam');
-  drawHulls._sig=''; drawHulls(cn,nodes); cn.on('finished',()=>drawHulls(cn,nodes)); cn.on('graphRoam',()=>drawHulls(cn,nodes)); [300,1000,2500].forEach(ms=>setTimeout(()=>drawHulls(cn,nodes),ms));
-  cn.on('click',e=>{
-    if(e.dataType==='edge'){ if(e.data.kind==='in'){ S.nd.pair=e.data.r; renderNetDetail(); } return; }
-    if(e.dataType==='node'&&e.data.kind==='in'){ const q=PL[e.data.name]; if(q) ndGo('plasmid',q.grp.key,q.name); }
-  });
+  const dist=r=>nmM+' '+vtxt(r);
+  const tipOf=(kind,k)=>{
+    if(kind==='e'){ const e=E[k], r=e.r; return `<b>${esc(r.a)} ↔ ${esc(r.b)}</b>${e.k==='x'?' <span style="opacity:.6">input–reference</span>':''}<br>${dist(r)} · z = ${fmt(e.z,2)}${e.close?' (close)':" (within Pling's threshold, not close)"}${Number.isFinite(r.cp)?`<br><b>Closer than ${fmt(r.cp,0)}% of the reference pairs</b>`:''}`; }
+    const d=nodes[k];
+    if(d.k==='ref') return `<b>${esc(d.name)}</b> <span style="opacity:.6">reference plasmid</span><br>Subcommunity ${esc(refG.get(d.name).label)}${d.cg>=0?`<br>Close group ${d.cg+1}`:''}`;
+    const q=PL[d.name]; return `<b>${esc(q.name)}</b> <span style="opacity:.6">input plasmid</span><br>Subcommunity ${esc(q.grp.label)}<br>${d.cg>=0?`Close group ${d.cg+1}`:'In no close group'} · ${deg[d.name]||0} close pair(s)<br>Mean DCJ ${fmt(q.meanDcj)}${Number.isFinite(q.refPct)?` (closer than ${fmt(q.refPct,0)}% of reference pairs)`:''}`; };
+  const ncol=x=>x.cg>=0?catColor(x.cg):'#b8bcc4';
+  show3d(true);
+  render3d(nodes.map(x=>({name:x.name,k:x.k,deg:deg[x.name]||0,color:ncol(x),ring:x.k==='in'&&many?catColor(PL[x.name].grp.i):null})),
+    E.map(e=>({a:e.r.a,b:e.r.b,close:e.close,cross:e.k==='x',cl:e.close?Math.min(1,Math.max(0,-e.z/3)):0,lbl:e.close&&e.k==='in'?vtxt(e.r):''})),
+    tipOf,{showN,showE,onNode:k=>{ const x=nodes[k]; if(x.k==='in'){ const q=PL[x.name]; if(q) ndGo('plasmid',q.grp.key,q.name); } },
+      onEdge:k=>{ const e=E[k]; if(e.k==='in'){ S.nd.pair=e.r; renderNetDetail(); } }});
   renderNetDetail();
 }
 
@@ -1293,6 +1403,7 @@ function renderNet(){
     else if(D.level==='plasmid'&&!S.plasmids.some(q=>q.name===D.p)){ D.level='comm'; D.p=null; D.pair=null; }
   }
   syncNetOpts(); if(D.level==='all'&&$('nwView').value==='close') return renderNetClose();
+  show3d(false);
   let rows=S.view;
   if(D.level==='comm') rows=rows.filter(r=>r.grp.key===D.comm); else if(D.level==='plasmid') rows=rows.filter(r=>r.a===D.p||r.b===D.p);
   if($('nwRel').checked&&D.level!=='plasmid') rows=rows.filter(r=>r.cls==='Outbreak-related');
@@ -1343,7 +1454,7 @@ function renderNet(){
   $(id).style.height=hasRefNodes?'720px':''; ch(id).resize();
   ch(id).setOption(base({
     legend:{top:0,left:0,icon:'circle',textStyle:{color:t.muted},data:[...gl,...refGs.map(g=>g.label+' reference plasmids')],formatter:n=>{ const g=S.grps.find(x=>x.label===n); return g&&g.ref?`${n} · ref ${g.ref.n.toLocaleString('en-US')} pairs, mean ${fmt(g.ref.md)}`:n; }},
-    tooltip:{...base().tooltip,formatter:p=>{
+    tooltip:{...base().tooltip,position:(pt,pr,dom,rect,size)=>[size.viewSize[0]-size.contentSize[0]-8,8],formatter:p=>{
       if(p.dataType==='edge'&&p.data.kind==='lay') return '';
       if(p.dataType==='edge'&&p.data.kind==='hubE'){ const q=p.data.p; return `<b>${esc(q.name)}</b> against the reference of subcommunity ${esc(q.grp.label)}<br>Mean DCJ ${fmt(q.meanDcj)}${Number.isFinite(q.refPct)?`<br><b>Closer than ${fmt(q.refPct,0)}% of the reference pairs</b>`:''}`; }
       if(p.data.kind==='hub'){ const g=p.data.g, h=g.ref.h; return `<b>Reference · subcommunity ${esc(g.label)}</b><br>${g.ref.n.toLocaleString('en-US')} known plasmid pairs<br>DCJ mean ${fmt(g.ref.md)} · SD ${fmt(g.ref.sd)}<br>median ${fmt(histQ(h,.5))} · 5th–95th percentile ${fmt(histQ(h,.05))}–${fmt(histQ(h,.95))}`; }
@@ -1360,7 +1471,7 @@ function renderNet(){
       force:D.level!=='all'?{repulsion:nodes.length>30?420:900,edgeLength:D.level==='plasmid'?[60,150]:[130,320],gravity:.05,layoutAnimation:false}:{repulsion:nodes.length>100?70:nodes.length>60?120:nodes.length>30?260:420,edgeLength:[50,200],gravity:.07,layoutAnimation:false},
       categories:[...gl.map(l=>({name:l,itemStyle:{color:catColor(S.grps.find(g=>g.label===l).i)}})),...refGs.map(g=>({name:g.label+' reference plasmids',itemStyle:{color:catColor(g.i)+'55'}}))],
       label:{show:showN,position:circ?'outside':'right',color:t.text,fontSize:11},labelLayout:{hideOverlap:true},
-      edgeLabel:{show:showE,fontSize:10,color:t.text,textBorderColor:t.panel,textBorderWidth:3,formatter:p=>p.data.lbl||''},
+      edgeLabel:{show:showE,fontSize:10,fontWeight:600,color:NETLBL,textBorderColor:t.panel,textBorderWidth:3,formatter:p=>p.data.lbl||''},
       emphasis:{focus:'adjacency',lineStyle:{width:5},edgeLabel:{show:true}},
       data:nodes.map(x=>x.k==='hub'?{name:x.name,kind:'hub',g:x.g,category:gl.length,symbol:'diamond',symbolSize:30,itemStyle:{color:REFC,borderColor:REFB,borderWidth:2},label:{show:true,position:'top',color:t.text,fontSize:11,fontWeight:600,textBorderColor:t.panel,textBorderWidth:3,formatter:()=>`Reference ${x.g.label}`}}:x.k==='in'
         ?{name:x.name,kind:'in',deg:deg[x.name],category:gl.indexOf(x.g.label),symbolSize:(D.level==='plasmid'&&x.name===D.p)?46:12+Math.min(26,deg[x.name]*2.5),itemStyle:{borderColor:t.cls[PL[x.name].status],borderWidth:(D.level==='plasmid'&&x.name===D.p)?6:3.5}}
@@ -1617,6 +1728,7 @@ function exportCSV(rows,name){
 /* ---------- orchestration ---------- */
 function update(){
   applyFilters();
+  { const on=!!(S.fComm||S.fQ.trim()||S.fGeo||S.fHost||S.fFrom!==''||S.fTo!==''||S.fCls.size<CLS.length); $('btnClear').hidden=!on; $('shown').hidden=!on; }
   computeStats();
   renderSummary();
   renderCITable();
@@ -1639,6 +1751,7 @@ function syncUI(){
 }
 function wire(){
   $('hmMetric').innerHTML='<option value="pos">Position in the reference (closer than %)</option>'+(S.has.dcj?'<option value="dcj">DCJ distance</option>':'');
+  $('fCommW').hidden=S.grps.length<2;
   $('fComm').innerHTML='<option value="">All subcommunities</option>'+S.grps.map(g=>`<option value="${esc(g.key)}">${esc(g.label)} (${g.n} pairs)</option>`).join('');
   $('fCls').innerHTML=CLS.map(c=>`<button class="chip" data-c="${c}" aria-pressed="true"><i style="background:var(${CLS_META[c].v})"></i>${c}</button>`).join('');
   $('fCls').onclick=e=>{const b=e.target.closest('.chip'); if(!b)return; const c=b.dataset.c; S.fCls.has(c)?S.fCls.delete(c):S.fCls.add(c); syncUI(); update();};
@@ -1653,7 +1766,7 @@ function wire(){
   $('btnExport').onclick=()=>exportCSV(S.view,`clust_assess_view_${S.meta.generated.slice(0,10)}.csv`);
   $('btnExportOb').onclick=()=>exportCSV(S.view.filter(r=>r.cls==='Outbreak-related'),`clust_assess_outbreak_${S.meta.generated.slice(0,10)}.csv`);
   ['scColor','scJit','scLbl','scRef'].forEach(i=>$(i).onchange=renderScatter);
-  ['zMet','zCut'].forEach(i=>$(i).onchange=renderClose);
+  ['zMet','zCut'].forEach(i=>$(i).onchange=renderClose); $('zBg').onchange=e=>{ S.zBg=e.target.value; renderHeat(); renderClose(); renderNet(); }; $('zMet').addEventListener('change',renderNet);
   $('hmMetric').onchange=renderHeat; $('hmRef').onchange=renderHeat; ['nwRel','nwLbl','nwNN','nwLay','nwRef','nwX','nwCol','nwView','nwWithin'].forEach(i=>$(i).onchange=renderNet); $('zCut').addEventListener('change',renderNet);
   $('posView').onchange=renderDelta; $('posBack').onclick=pdBack; $('posGrid').addEventListener('click',pdClick);
   { const grid=$('posGrid'), tip=document.createElement('div'); tip.id='posTip'; document.body.appendChild(tip);
@@ -2278,7 +2391,7 @@ function initCollapsibles(){
 
 async function init(){
   try{
-    const [t,r,inp]=await loadData(); build(t,r,inp);
+    const [t,r,inp,win]=await loadData(); build(t,r,inp,win);
     $('loading').style.display='none'; $('app').style.display=''; $('topbar').style.visibility='visible';
     initTables(); renderQC(); wire(); setupOptional(); initInfo(); attachInfo(); initCollapsibles(); initRanges(); syncUI(); update();
   }catch(err){

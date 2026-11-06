@@ -2,7 +2,7 @@
 nextflow.enable.dsl = 2
 
 include { BUILD_DB } from './workflows/build_db.nf'
-include { ASSESS   } from './workflows/assess.nf'
+include { ASSESS; HTML_REPORT } from './workflows/assess.nf'
 include { VERSIONS; DB_DISTRIBUTIONS } from './workflows/utils.nf'
 
 def require(names) {
@@ -46,5 +46,18 @@ workflow {
     // Distance distributions of the database's own Pling run (default <db>/pling), once per run
     if (params.db_distributions) {
         DB_DISTRIBUTIONS(db.map { d -> params.db_pling_dir ? file(params.db_pling_dir, checkIfExists: true) : d.resolve('pling') })
+    }
+    // Interactive HTML report: the last step. Its z-score background is the database's own pairs when DB_DISTRIBUTIONS ran;
+    // the empty assets/NO_FILE stands in when it is off or failed (the report then uses the pairs in the results file).
+    if (params.mode != 'build_db' && params.html_report) {
+        def no_file = file("${projectDir}/assets/NO_FILE", checkIfExists: true)
+        def within = params.db_distributions
+            ? DB_DISTRIBUTIONS.out.dir.map { d -> d.resolve('within_pairs.tsv.gz') }.ifEmpty(no_file)
+            : channel.value(no_file)
+        HTML_REPORT(ASSESS.out.final_extended,
+                    ASSESS.out.inputs_table,
+                    within,
+                    ASSESS.out.baselines,
+                    file("${projectDir}/html_report", checkIfExists: true))
     }
 }

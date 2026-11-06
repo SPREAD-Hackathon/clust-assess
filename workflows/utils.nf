@@ -52,6 +52,7 @@ process DB_DISTRIBUTIONS {
     mkdir -p db_distributions
     printf 'subcommunity\\tn_members\\tn_pairs\\n' > db_distributions/subcommunity_summary.tsv
     echo '{"stub": true}' > db_distributions/run_info.json
+    touch db_distributions/within_pairs.tsv.gz
     """
 }
 
