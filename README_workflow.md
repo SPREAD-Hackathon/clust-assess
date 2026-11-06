@@ -26,12 +26,14 @@ flowchart LR
     PM --> RE[REPORT]
     PI --> RE
     RE --> OUT["final_output.csv<br/>+ tables and JSON"]
+    DB --> DD["DB_DISTRIBUTIONS<br/>distance distributions<br/>of the database (descriptive)"]
 ```
 
 1. **Assign:** ACCIO matches each input plasmid to the most similar plasmid in the reference database. It scores BLAST identity and coverage, Mash containment, synteny and length. This places the input in that plasmid's Pling **subcommunity**.
 2. **Baseline:** for every subcommunity that receives an input, the k database plasmids closest to the inputs (Mash, default k = 20) are compared with each other using Pling (containment and DCJ-Indel distances).
 3. **Inputs:** Pling compares all input plasmids with each other, using the same thresholds.
 4. **Compare:** the inputs' pairwise distances are reported next to the baseline. A resampling test then asks how often random sets of database plasmids, the same size as the input set, are at least as tight as the inputs.
+5. **Describe the database** (`DB_DISTRIBUTIONS`, on by default): within-subcommunity and within-community distance distributions of the database's own Pling run, with figures. This shows how tight the database's subcommunities are, and which inputs could have no baseline at all. See [`db_distributions/`](#db_distributions).
 
 The database is built once, with `accio create`, from reference plasmids such as PLSDB. Building it can be part of the run (`--mode build_db` or `--mode all`):
 
@@ -129,7 +131,34 @@ other_NZ_CP039944.1;outbreak_CP067528.1;NA;NA;1;NA
 | `final_output_extended.csv` | `final_output.csv`, plus the subcommunity of each plasmid, whether the DCJ was censored, the subcommunity status, and `p_tighter` |
 | `clust_assess.json` | All of the above plus an overall verdict, for the interactive HTML report |
 | `accio/`, `baseline/`, `inputs/`, `db_check/` | Intermediate results: ACCIO calls, baseline plasmids and their distances, input pairs, database check |
+| `db_distributions/` | Distance distributions of the database itself (see below); turn off with `--db_distributions false` |
 | `runningstat/` | `software_versions.yml`, and Nextflow `execution.html`, `timeline.html`, `trace.txt` and `dag.html` |
+
+### `db_distributions/`
+
+Describes the database's own Pling run: `<db>/pling` by default, or `--db_pling_dir`. It runs once per run, in every mode. It is descriptive only: nothing else reads it, and if it fails the run still finishes (Nextflow prints a NOTE).
+
+| file | content |
+|---|---|
+| `subcommunity_summary.tsv`, `community_summary.tsv` | One row per group with ≥ 2 members: size, pairs, DCJ and containment quantiles, pairs not computed (`*_censored`), share within the Pling threshold |
+| `within_pairs.tsv.gz` | Every within-group pair with its DCJ and containment distance |
+| `subcommunity_distribution.png`, `community_distribution.png` | Histogram and box plots of the largest groups |
+| `insight_group_sizes.png` | Plasmids alone in their group: an input that lands there has no baseline |
+| `insight_same_vs_other.png` | Pairs in the same subcommunity vs pairs that only share a community (cumulative) |
+| `insight_dcj_vs_containment.png` | DCJ against containment for every within-community pair (needs containment distances) |
+| `insight_heatmaps.png` | Distance matrices of the largest communities (DCJ above the diagonal, containment below), subcommunities boxed |
+| `run_info.json`, `distributions.log` | Files used, thresholds, counts, log |
+
+A missing pair is a pair Pling never computed. For DCJ, that means the pair failed the containment filter. These pairs are counted as "too different" (censored), not dropped.
+
+`--db_containment` only sets the threshold that is drawn and counted; Pling is not re-run. Set it to the threshold of the database's Pling run: ACCIO uses 0.3, the Zenodo PLSDB run used 0.5.
+
+The same files can be made outside the workflow, for any Pling output folder:
+
+```bash
+python bin/distance_distribution.py --pling_dir <pling dir> --outdir <out> --containment_threshold 0.3 --plots
+python bin/distribution_insights.py --dist_dir <out>
+```
 
 ### Status and verdict
 
@@ -161,6 +190,9 @@ The **overall verdict** in `clust_assess.json` has three possible values:
 | `--baseline_members` | `all` | `all` = include plasmids that ACCIO de-duplicated; `representatives` = only the representative plasmids |
 | `--n_resample` / `--alpha` / `--seed` | `1000` / `0.05` / `2026` | Resampling test |
 | `--db_outdir` / `--db_name` | `db/` / `clust_assess_db` | Where `build_db` writes the database |
+| `--db_distributions` | `true` | Write [`db_distributions/`](#db_distributions) |
+| `--db_pling_dir` | `<db>/pling` | Pling output folder to describe there |
+| `--db_containment` | `0.3` | Containment threshold of that Pling run; only drawn and counted |
 | `--results_dir` | `results/` | Output folder |
 | `--max_cpus` | `4` | Upper limit of CPUs per process (CLIMB allowance) |
 | `--accio_create_args`, `--accio_find_args`, `--pling_args` | | Extra arguments passed to `accio create`, `accio find` and `pling cluster align` (default `--visualisation none`) |
