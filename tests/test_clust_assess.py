@@ -124,6 +124,24 @@ def test_report_final_output_format(tmp_path):
     assert s["verdict"] == sub["status"] and s["n_assigned"] == 3
 
 
+def test_report_json_is_strict_and_uses_null(tmp_path):
+    import json
+
+    test_report_final_output_format(tmp_path)
+    text = (tmp_path / "out" / "clust_assess.json").read_text()
+
+    def reject(token):
+        raise ValueError(f"non-standard JSON token {token}")
+
+    d = json.loads(text, parse_constant=reject)          # NaN / Infinity would break JSON.parse in a browser
+    rows = d["inputs"] + d["pairs"] + d["subcommunities"]
+    assert not [(k, v) for r in rows for k, v in r.items() if v in ("", "NA")]
+    pd_row = next(r for r in d["inputs"] if r["input_id"] == "pD")
+    assert pd_row["status"] == "no_assignment" and pd_row["ref_plasmid"] is None and pd_row["subcommunity"] is None
+    pair = next(p for p in d["pairs"] if {p["Plasmid A"], p["Plasmid B"]} == {"pA", "pD"})
+    assert pair["DCJ"] is None and pair["dcj_censored"] is True and pair["containment"] == 0.9
+
+
 def test_candidates_include_deduplicated_copies(tmp_path):
     from clust_assess import db
     d = tmp_path / "db"
