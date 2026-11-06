@@ -1,11 +1,12 @@
 #!/bin/sh
 # Builds results/report.html from results/final_output_extended.csv and the reference database that ships with this folder (reference/). Nothing to install (POSIX shell, tr, cat).
-# Run it, or call:  sh html_report/make_report.sh [final_output_extended.csv] [report.html] [reference_db.tsv(.gz)] [inputs.tsv]
+# Run it, or call:  sh html_report/make_report.sh [final_output_extended.csv] [report.html] [reference_db.tsv(.gz)] [inputs.tsv] [within_pairs.tsv(.gz)]
 HERE=$(cd "$(dirname "$0")" && pwd) || exit 1
 ROOT=$(dirname "$HERE")
 CSV=${1:-"$ROOT/results/final_output_extended.csv"}
 OUT=${2:-"$ROOT/results/report.html"}
 REF=${3:-"$HERE/reference/reference_db.tsv.gz"}   # bundled; pass another table (plain or .gz) to override
+WIN=${5:-"$(dirname "$CSV")/db_distributions/within_pairs.tsv.gz"}   # optional: the database pairs the analyst measures z-scores against
 INP=${4:-"$(dirname "$CSV")/inputs.tsv"}            # optional: the pipeline's inputs.tsv (nearest database plasmid of each input); used when present
 
 for f in "$CSV" "$REF" "$HERE/index.html" "$HERE/echarts.min.js"; do
@@ -27,6 +28,8 @@ tr -d '\r' < "$HERE/index.html" | while IFS= read -r line || [ -n "$line" ]; do
 </script>
 '; else printf '%s
 ' "$line"; fi ;;
+    '<script id="within-data" type="text/csv"></script>')
+      if [ -s "$WIN" ]; then printf '<script id="within-data" type="text/plain" data-enc="gzip-base64">\n'; case "$WIN" in *.gz) base64 < "$WIN" ;; *) gzip -9 -c "$WIN" | base64 ;; esac | tr -d '\n\r'; printf '\n</script>\n'; else printf '%s\n' "$line"; fi ;;
     '<script id="ref-data" type="text/csv"></script>')
       printf '<script id="ref-data" type="text/plain" data-enc="gzip-base64">\n'; case "$REF" in *.gz) base64 < "$REF" ;; *) gzip -9 -c "$REF" | base64 ;; esac | tr -d '\n\r'; printf '\n</script>\n' ;;
     *) printf '%s\n' "$line" ;;

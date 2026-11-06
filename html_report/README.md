@@ -34,6 +34,10 @@ The pipeline's main result (`;`, `,` or tab separated).
 | `Plasmid A country` / `Plasmid B country`, `... host`, `... date` | no | metadata; each one unlocks its own section |
 | `community_DCJ`, `community_containment`, `same_subcommunity`, `subcommunity_status`, `p_tighter` | no | ignored: the reference pairs are the baseline |
 
+### Optional: `db_distributions/within_pairs.tsv.gz`
+
+The database pairs of the pipeline's own Pling run. When present (by default in `db_distributions/` next to the results file, or as a fifth argument), they are the background of the z-scores (heatmap dots, Closeness analysis, close-pair network), exactly as in the analyst's `pairwise_insights.py`, which gives identical close pairs, z levels and close groups. Without it the background is the pairs in the results file (input pairs plus input–reference pairs). The Closeness analysis has a Background switch to use the reference database instead, which gives different numbers because it is a different set of pairs; the judgement elsewhere in the report (closer than X% of the reference) always uses the reference.
+
 ### Optional: `inputs.tsv`
 
 The pipeline's table of inputs. Each input's nearest database plasmid (`nearest_db_plasmid`, `nearest_db_dcj`, `nearest_db_containment`) is added as an input-to-reference pair when that plasmid is in the reference, so the reference plasmid shows in the heatmaps and the network. Those known plasmids also place the input in their subcommunity, which takes priority over the subcommunity names in the results file. This is how inputs assigned to `community_0_subcommunity_0` by the pipeline's database are judged against subcommunity 7129 of the bundled reference (when the nearest plasmid is in both).
