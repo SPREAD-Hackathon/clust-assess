@@ -1,9 +1,9 @@
 #!/bin/sh
-# Builds results/report.html from results/final_output.csv and the reference database that ships with this folder (reference/). Nothing to install (POSIX shell, tr, cat).
-# Run it, or call:  sh html_report/make_report.sh [final_output.csv] [report.html] [reference_db.tsv(.gz)]
+# Builds results/report.html from results/final_output_extended.csv and the reference database that ships with this folder (reference/). Nothing to install (POSIX shell, tr, cat).
+# Run it, or call:  sh html_report/make_report.sh [final_output_extended.csv] [report.html] [reference_db.tsv(.gz)]
 HERE=$(cd "$(dirname "$0")" && pwd) || exit 1
 ROOT=$(dirname "$HERE")
-CSV=${1:-"$ROOT/results/final_output.csv"}
+CSV=${1:-"$ROOT/results/final_output_extended.csv"}
 OUT=${2:-"$ROOT/results/report.html"}
 REF=${3:-"$HERE/reference/reference_db.tsv.gz"}   # bundled; pass another table (plain or .gz) to override
 

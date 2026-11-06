@@ -1,24 +1,24 @@
 # Interactive HTML report
 
-Turns the pipeline's `final_output.csv` into one self-contained `report.html`, comparing your plasmids with a reference database that **ships with this folder**. It needs no Python, no internet and no server, and opens with a double-click (it can also be emailed). The reference is embedded compressed, so it adds only about 2 MB to the report. Opening the report needs a current browser (Chrome, Edge, Firefox or Safari 16.4+).
+Turns the pipeline's `final_output_extended.csv` into one self-contained `report.html`, comparing your plasmids with a reference database that **ships with this folder**. It needs no Python, no internet and no server, and opens with a double-click (it can also be emailed). The reference is embedded compressed, so it adds only about 2 MB to the report. Opening the report needs a current browser (Chrome, Edge, Firefox or Safari 16.4+).
 
 A sample input and the report built from it are in [`../example_output/html_report/`](../example_output/html_report/).
 
 ## Build it
 
-Run from the repository root, after the pipeline has written `results/final_output.csv`:
+Run from the repository root, after the pipeline has written `results/final_output_extended.csv`:
 
 ```
 sh html_report/make_report.sh                  # Mac / Linux
 html_report\make_report.bat                    # Windows (double-clicking it also works)
 
-# explicit paths, e.g. inside a workflow step: <final_output.csv> <report.html>
-sh html_report/make_report.sh results/final_output.csv results/report.html
+# explicit paths, e.g. inside a workflow step: <final_output_extended.csv> <report.html>
+sh html_report/make_report.sh results/final_output_extended.csv results/report.html
 ```
 
-Defaults are `results/final_output.csv` and `results/report.html`. Exit code `0` = report written, `1` = failed (the reason is printed). With no arguments the report opens in the browser; with arguments it does not. Set `CA_NOOPEN=1` to never open it.
+Defaults are `results/final_output_extended.csv` and `results/report.html`. Exit code `0` = report written, `1` = failed (the reason is printed). With no arguments the report opens in the browser; with arguments it does not. Set `CA_NOOPEN=1` to never open it.
 
-## Input: `final_output.csv`
+## Input: `final_output_extended.csv`
 
 The pipeline's main result (`;`, `,` or tab separated).
 
@@ -26,11 +26,15 @@ The pipeline's main result (`;`, `,` or tab separated).
 |---|---|---|
 | `Plasmid A`, `Plasmid B` | yes | the two plasmids compared |
 | `DCJ` | yes | Pling DCJ-Indel distance, `NA` rows are skipped |
-| `community` | no | subcommunity of the pair (`7129` or the full id). Otherwise taken from known reference plasmids in the file, or from the only subcommunity in the reference |
-| `containment` | no | drawn as its own pairwise heatmap (not part of the judgement) |
+| `subcommunity_A`, `subcommunity_B` | recommended | subcommunity of each plasmid (`7129` or the full id, e.g. `community_0_subcommunity_7129`). A pair whose plasmids are in different subcommunities is not assessed |
+| `dcj_censored` | no | `True` = Pling did not compute the DCJ (containment above its threshold); these pairs are left out and counted |
+| `community` | no | older alternative to `subcommunity_A/B` |
+| `containment` | no | Pling containment **distance** (0 = fully contained, 1 = nothing shared); drawn as its own pairwise heatmap (not part of the judgement) |
 | `mash` | no | Mash distance; drawn as its own pairwise heatmap when present (not part of the judgement) |
 | `Plasmid A country` / `Plasmid B country`, `... host`, `... date` | no | metadata; each one unlocks its own section |
-| `community_DCJ`, `community_containment` | no | ignored: the reference pairs are the baseline |
+| `community_DCJ`, `community_containment`, `same_subcommunity`, `subcommunity_status`, `p_tighter` | no | ignored: the reference pairs are the baseline |
+
+**Subcommunity ids belong to one database build.** If the file names subcommunities that are not in the bundled reference (for example `community_0_subcommunity_0` from another database), they are not assessed. When none can be assessed, the page says so and offers to judge them against the reference's only subcommunity anyway; use that only if the plasmids really belong to that group. A file with no subcommunity information at all is assigned to the reference's only subcommunity.
 
 A pair with exactly one plasmid in the reference is treated as a measured input-to-reference pair: it is shown in the network and the plasmid tables and is not part of the judgement.
 
@@ -40,7 +44,7 @@ A pair with exactly one plasmid in the reference is treated as a measured input-
 
 - **Coverage:** a subcommunity that is not in the bundled table, or whose reference has fewer than 10 pairs, is not assessed and is listed in the Summary.
 - **Format** (tab separated, plain or `.gz`): `plasmid_1`, `plasmid_2`, `subcommunity` (or `community`), `dcj` (>= 0); `community` and `containment` are optional.
-- **To update or extend it:** replace `reference/reference_db.tsv.gz` with a table in the same format (it can hold several subcommunities), or pass another table as a third argument: `sh html_report/make_report.sh results/final_output.csv results/report.html my_reference.tsv`.
+- **To update or extend it:** replace `reference/reference_db.tsv.gz` with a table in the same format (it can hold several subcommunities), or pass another table as a third argument: `sh html_report/make_report.sh results/final_output_extended.csv results/report.html my_reference.tsv`.
 
 ## How the report judges the input
 
@@ -50,7 +54,7 @@ A reference whose 95th-percentile DCJ is above 25 is flagged as broad.
 
 ## What is in the report
 
-Summary (checks, key figures), Distance distributions by subcommunity (with a Details view of which plasmid sits where), Pairwise heatmaps (DCJ, plus containment and Mash when present), Position of the input in the reference (rings and ranked pairs, with drill-down), Plasmid network (drill-down), and the optional Geography / Host / Dates, Plasmid statistics, Pair explorer and Method & keys sections. Every chart has an ⓘ explaining what it shows and how to read it.
+Summary (checks, key figures), Distance distributions by subcommunity (with a Details view of which plasmid sits where), Pairwise heatmaps (DCJ, plus containment and Mash when present; darker = closer, scale 0 to twice the Pling threshold on a square-root scale, threshold marked on the colour bar, plasmids ordered by DCJ and containment together), Position of the input in the reference (rings and ranked pairs, with drill-down), Plasmid network (drill-down), and the optional Geography / Host / Dates, Plasmid statistics, Pair explorer and Method & keys sections. Every chart has an ⓘ explaining what it shows and how to read it.
 
 ## Files
 
@@ -64,5 +68,5 @@ reference/reference_db.tsv.gz     bundled reference database
 
 ## Follow-ups
 
-- The pipeline's own `baseline/*.member_pairs.tsv` files have the columns `a`, `b`, `containment`, `dcj`, `dcj_censored` and carry the subcommunity in the file name. Building the reference from them for other subcommunities needs a small step that combines them into one table with a `subcommunity` column (or an extension of the parser).
+- The pipeline builds the reference from its own `baseline/*.member_pairs.tsv` files in the `HTML_REPORT` step (see `README_workflow.md`); the bundled table is the fallback. The Pling thresholds used for the heatmap scale (DCJ 4, containment 0.5) are the pipeline defaults and are fixed in the page.
 - Containment and Mash are shown as supplied; the reference currently holds DCJ only, so there is no baseline for them.

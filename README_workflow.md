@@ -33,7 +33,7 @@ flowchart LR
 2. **Baseline:** for every subcommunity that receives an input, the k database plasmids closest to the inputs (Mash, default k = 20) are compared with each other using Pling (containment and DCJ-Indel distances).
 3. **Inputs:** Pling compares all input plasmids with each other, using the same thresholds.
 4. **Compare:** the inputs' pairwise distances are reported next to the baseline. A resampling test then asks how often random sets of database plasmids, the same size as the input set, are at least as tight as the inputs.
-5. **Report** (`HTML_REPORT`, on by default): builds `report.html`, a single self-contained page, from `final_output.csv`. Its reference is made from this run's `baseline/*.member_pairs.tsv`. Pairs with a censored DCJ are left out, which makes the reference slightly biased toward close pairs, and `--k_closest` limits it to the closest database plasmids of each subcommunity (`--k_closest 0` uses the whole subcommunity). If no baseline is available, the report uses the reference bundled in `html_report/reference` (subcommunity 7129 only; other subcommunities are listed as not assessed). This step is optional: if it fails, the run still completes.
+5. **Report** (`HTML_REPORT`, on by default): builds `report.html`, a single self-contained page, from `final_output_extended.csv`. Its reference is made from this run's `baseline/*.member_pairs.tsv`. Pairs with a censored DCJ are left out, which makes the reference slightly biased toward close pairs, and `--k_closest` limits it to the closest database plasmids of each subcommunity (`--k_closest 0` uses the whole subcommunity). If no baseline is available, the report uses the reference bundled in `html_report/reference` (subcommunity 7129 only; other subcommunities are listed as not assessed). This step is optional: if it fails, the run still completes.
 6. **Describe the database** (`DB_DISTRIBUTIONS`, on by default): within-subcommunity and within-community distance distributions of the database's own Pling run, with figures. This shows how tight the database's subcommunities are, and which inputs could have no baseline at all. See [`db_distributions/`](#db_distributions).
 
 The database is built once, with `accio create`, from reference plasmids such as PLSDB. Building it can be part of the run (`--mode build_db` or `--mode all`):
@@ -131,7 +131,7 @@ other_NZ_CP039944.1;outbreak_CP067528.1;NA;NA;1;NA
 | `inputs.tsv` | One row per input plasmid: ACCIO call (`called` / `no_assignment` with reason), closest database plasmid, ACCIO and Mash scores, subcommunity |
 | `final_output_extended.csv` | `final_output.csv`, plus the subcommunity of each plasmid, whether the DCJ was censored, the subcommunity status, and `p_tighter` |
 | `clust_assess.json` | All of the above plus an overall verdict |
-| `report.html` | Interactive HTML report built from `final_output.csv` (see [`html_report/`](html_report/README.md)); turn off with `--html_report false` |
+| `report.html` | Interactive HTML report built from `final_output_extended.csv` (see [`html_report/`](html_report/README.md)); turn off with `--html_report false` |
 | `accio/`, `baseline/`, `inputs/`, `db_check/` | Intermediate results: ACCIO calls, baseline plasmids and their distances, input pairs, database check |
 | `db_distributions/` | Distance distributions of the database itself (see below); turn off with `--db_distributions false` |
 | `runningstat/` | `software_versions.yml`, and Nextflow `execution.html`, `timeline.html`, `trace.txt` and `dag.html` |

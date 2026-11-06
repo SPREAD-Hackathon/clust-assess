@@ -1,8 +1,8 @@
 <# : batch portion
 @echo off
 setlocal
-rem  Builds results\report.html from results\final_output.csv and the reference database that ships with this folder (reference\). Nothing to install (uses PowerShell, built into Windows).
-rem  Double-click it, or call:  make_report.bat [final_output.csv] [report.html] [reference_db.tsv(.gz)]
+rem  Builds results\report.html from results\final_output_extended.csv and the reference database that ships with this folder (reference\). Nothing to install (uses PowerShell, built into Windows).
+rem  Double-click it, or call:  make_report.bat [final_output_extended.csv] [report.html] [reference_db.tsv(.gz)]
 set "CA_SELF=%~f0"
 set "CA_CSV=%~1"
 set "CA_OUT=%~2"
@@ -19,7 +19,7 @@ $ErrorActionPreference = 'Stop'
 try {
   $here = Split-Path -Parent $env:CA_SELF
   $root = Split-Path -Parent $here
-  $csv  = if ($env:CA_CSV) { [IO.Path]::GetFullPath($env:CA_CSV) } else { Join-Path (Join-Path $root 'results') 'final_output.csv' }
+  $csv  = if ($env:CA_CSV) { [IO.Path]::GetFullPath($env:CA_CSV) } else { Join-Path (Join-Path $root 'results') 'final_output_extended.csv' }
   $ref  = if ($env:CA_REF) { [IO.Path]::GetFullPath($env:CA_REF) } else { Join-Path (Join-Path $here 'reference') 'reference_db.tsv.gz' }
   $out  = if ($env:CA_OUT) { [IO.Path]::GetFullPath($env:CA_OUT) } else { Join-Path (Join-Path $root 'results') 'report.html' }
   $page = Join-Path $here 'index.html'

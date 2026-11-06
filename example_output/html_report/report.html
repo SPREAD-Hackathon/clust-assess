@@ -377,7 +377,7 @@ section>h2{margin-bottom:12px}
   <h2>Method &amp; keys</h2>
   <div class="grid2">
     <div class="panel"><h3>Files</h3><table>
-      <tr><td><b>final_output.csv</b></td><td>Your plasmid pairs: <span class="kbd">Plasmid A</span>, <span class="kbd">Plasmid B</span> and <span class="kbd">DCJ</span> are required. Optional <span class="kbd">containment</span> and <span class="kbd">mash</span> (Mash distance) columns are drawn as their own pairwise heatmaps but are not part of the judgement. <span class="kbd">community_DCJ</span> and <span class="kbd">community_containment</span> are ignored.</td></tr>
+      <tr><td><b>final_output_extended.csv</b></td><td>Your plasmid pairs: <span class="kbd">Plasmid A</span>, <span class="kbd">Plasmid B</span> and <span class="kbd">DCJ</span> are required. <span class="kbd">subcommunity_A</span> / <span class="kbd">subcommunity_B</span> give the subcommunity of each plasmid, and pairs with <span class="kbd">dcj_censored</span> = True are left out. Optional <span class="kbd">containment</span> and <span class="kbd">mash</span> (Mash distance) columns are drawn as their own pairwise heatmaps but are not part of the judgement. <span class="kbd">community_DCJ</span> and <span class="kbd">community_containment</span> are ignored.</td></tr>
       <tr><td><b>Reference database</b></td><td>Part of the report builder (<span class="kbd">html_report/reference</span>): the pling pair table of a subcommunity (plasmid_1, plasmid_2, subcommunity, dcj). Its pairs are the yardstick and their mean DCJ is the baseline. Pairs of a subcommunity that is not in it are not assessed.</td></tr>
       <tr><td><b>Pair types</b></td><td>A pair with exactly one plasmid in the reference is a measured input–reference pair: it is shown in the network and the plasmid tables and is not part of the judgement. All other pairs are judged against the reference.</td></tr></table>
     </div>
@@ -389,7 +389,7 @@ section>h2{margin-bottom:12px}
   </div>
   <div class="grid2" style="margin-top:16px">
     <div class="panel"><h3>Optional columns</h3><table>
-      <tr><td><b>community</b></td><td>The subcommunity of each pair (for example 7129 or community_0_subcommunity_7129). When absent it is taken from known reference plasmids in the file, or from the only subcommunity in the reference.</td></tr>
+      <tr><td><b>subcommunity_A / _B (or community)</b></td><td>The subcommunity of each plasmid (for example 7129 or community_0_subcommunity_7129). A pair whose plasmids are in different subcommunities is not assessed. When the file has none, it is taken from known reference plasmids in the file, or from the only subcommunity in the reference. When the file names subcommunities that are not in the reference, they are not assessed (you can choose to judge them against the reference anyway).</td></tr>
       <tr><td><b>Plasmid A / B country</b></td><td>Location of each plasmid. A single <span class="kbd">country</span> column is applied to both. Also: geography, location, region.</td></tr>
       <tr><td><b>Plasmid A / B host</b></td><td>Host of each plasmid, or one <span class="kbd">host</span> column. Also: species, organism.</td></tr>
       <tr><td><b>Plasmid A / B date</b></td><td>ISO date (2024-05-14) or year, or one <span class="kbd">date</span> column. Also: collection_date, year.</td></tr></table>
@@ -406,127 +406,112 @@ section>h2{margin-bottom:12px}
 </div>
 
 <script id="csv-data" type="text/csv">
-Plasmid A;Plasmid B;DCJ;community_DCJ;containment;community_containment
-NZ_CP117991.1;pIso10_PT8_Ec4_OXA-48;4;NA;0.1297;NA
-NZ_CP117991.1;pIso11_PT9_Kp3_OXA-48;1;NA;0;NA
-NZ_CP117991.1;pIso12_PT10_Kp4_OXA-48;1;NA;0;NA
-NZ_CP117991.1;pIso13_PT11_Eh2_OXA-48;4;NA;0.1024;NA
-NZ_CP117991.1;pIso14_PT12_Kp5_OXA-48;4;NA;0.09911;NA
-NZ_CP117991.1;pIso15_PT13_Ec5_OXA-48;0;NA;0;NA
-NZ_CP117991.1;pIso1_PT1_Eh1_OXA-48;0;NA;0;NA
-NZ_CP117991.1;pIso2_PT1_Kp1_OXA-48;0;NA;0;NA
-NZ_CP117991.1;pIso3_PT1_Ec1_OXA-48;1;NA;0;NA
-NZ_CP117991.1;pIso4_PT2_Cf1_OXA-48;5;NA;0.1409;NA
-NZ_CP117991.1;pIso5_PT3_Ka1_OXA-48;1;NA;0;NA
-NZ_CP117991.1;pIso6_PT4_Cf2_OXA-48;5;NA;0.1252;NA
-NZ_CP117991.1;pIso7_PT5_Ec2_OXA-48;3;NA;0;NA
-NZ_CP117991.1;pIso8_PT6_Kp2_OXA-48;4;NA;0.001827;NA
-NZ_CP117991.1;pIso9_PT7_Ec3_OXA-48;1;NA;0;NA
-pIso10_PT8_Ec4_OXA-48;pIso11_PT9_Kp3_OXA-48;2;NA;0.02128;NA
-pIso10_PT8_Ec4_OXA-48;pIso12_PT10_Kp4_OXA-48;2;NA;0.02125;NA
-pIso10_PT8_Ec4_OXA-48;pIso13_PT11_Eh2_OXA-48;5;NA;0.02419;NA
-pIso10_PT8_Ec4_OXA-48;pIso14_PT12_Kp5_OXA-48;4;NA;0.02011;NA
-pIso10_PT8_Ec4_OXA-48;pIso15_PT13_Ec5_OXA-48;3;NA;0.1032;NA
-pIso10_PT8_Ec4_OXA-48;pIso1_PT1_Eh1_OXA-48;3;NA;0.1032;NA
-pIso10_PT8_Ec4_OXA-48;pIso2_PT1_Kp1_OXA-48;3;NA;0.1032;NA
-pIso10_PT8_Ec4_OXA-48;pIso3_PT1_Ec1_OXA-48;4;NA;0.1679;NA
-pIso10_PT8_Ec4_OXA-48;pIso4_PT2_Cf1_OXA-48;4;NA;0.02662;NA
-pIso10_PT8_Ec4_OXA-48;pIso5_PT3_Ka1_OXA-48;3;NA;0.1036;NA
-pIso10_PT8_Ec4_OXA-48;pIso6_PT4_Cf2_OXA-48;5;NA;0.1032;NA
-pIso10_PT8_Ec4_OXA-48;pIso7_PT5_Ec2_OXA-48;6;NA;0.1407;NA
-pIso10_PT8_Ec4_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.09336;NA
-pIso10_PT8_Ec4_OXA-48;pIso9_PT7_Ec3_OXA-48;3;NA;0.1271;NA
-pIso11_PT9_Kp3_OXA-48;pIso12_PT10_Kp4_OXA-48;0;NA;0;NA
-pIso11_PT9_Kp3_OXA-48;pIso13_PT11_Eh2_OXA-48;4;NA;0.02639;NA
-pIso11_PT9_Kp3_OXA-48;pIso14_PT12_Kp5_OXA-48;3;NA;0.04477;NA
-pIso11_PT9_Kp3_OXA-48;pIso15_PT13_Ec5_OXA-48;1;NA;0;NA
-pIso11_PT9_Kp3_OXA-48;pIso1_PT1_Eh1_OXA-48;1;NA;0;NA
-pIso11_PT9_Kp3_OXA-48;pIso2_PT1_Kp1_OXA-48;1;NA;0;NA
-pIso11_PT9_Kp3_OXA-48;pIso3_PT1_Ec1_OXA-48;2;NA;0.1445;NA
-pIso11_PT9_Kp3_OXA-48;pIso4_PT2_Cf1_OXA-48;4;NA;0.1409;NA
-pIso11_PT9_Kp3_OXA-48;pIso5_PT3_Ka1_OXA-48;1;NA;0.0004718;NA
-pIso11_PT9_Kp3_OXA-48;pIso6_PT4_Cf2_OXA-48;2;NA;0;NA
-pIso11_PT9_Kp3_OXA-48;pIso7_PT5_Ec2_OXA-48;4;NA;0.04108;NA
-pIso11_PT9_Kp3_OXA-48;pIso8_PT6_Kp2_OXA-48;4;NA;0.03045;NA
-pIso11_PT9_Kp3_OXA-48;pIso9_PT7_Ec3_OXA-48;2;NA;0.09574;NA
-pIso12_PT10_Kp4_OXA-48;pIso13_PT11_Eh2_OXA-48;4;NA;0.02635;NA
-pIso12_PT10_Kp4_OXA-48;pIso14_PT12_Kp5_OXA-48;3;NA;0.04471;NA
-pIso12_PT10_Kp4_OXA-48;pIso15_PT13_Ec5_OXA-48;1;NA;0;NA
-pIso12_PT10_Kp4_OXA-48;pIso1_PT1_Eh1_OXA-48;1;NA;0;NA
-pIso12_PT10_Kp4_OXA-48;pIso2_PT1_Kp1_OXA-48;1;NA;0;NA
-pIso12_PT10_Kp4_OXA-48;pIso3_PT1_Ec1_OXA-48;2;NA;0.1445;NA
-pIso12_PT10_Kp4_OXA-48;pIso4_PT2_Cf1_OXA-48;4;NA;0.1409;NA
-pIso12_PT10_Kp4_OXA-48;pIso5_PT3_Ka1_OXA-48;1;NA;0.0004711;NA
-pIso12_PT10_Kp4_OXA-48;pIso6_PT4_Cf2_OXA-48;2;NA;0;NA
-pIso12_PT10_Kp4_OXA-48;pIso7_PT5_Ec2_OXA-48;4;NA;0.04102;NA
-pIso12_PT10_Kp4_OXA-48;pIso8_PT6_Kp2_OXA-48;4;NA;0.0304;NA
-pIso12_PT10_Kp4_OXA-48;pIso9_PT7_Ec3_OXA-48;2;NA;0.09561;NA
-pIso13_PT11_Eh2_OXA-48;pIso14_PT12_Kp5_OXA-48;2;NA;0;NA
-pIso13_PT11_Eh2_OXA-48;pIso15_PT13_Ec5_OXA-48;4;NA;0.1024;NA
-pIso13_PT11_Eh2_OXA-48;pIso1_PT1_Eh1_OXA-48;4;NA;0.1024;NA
-pIso13_PT11_Eh2_OXA-48;pIso2_PT1_Kp1_OXA-48;4;NA;0.1024;NA
-pIso13_PT11_Eh2_OXA-48;pIso3_PT1_Ec1_OXA-48;5;NA;0.1735;NA
-pIso13_PT11_Eh2_OXA-48;pIso4_PT2_Cf1_OXA-48;2;NA;0;NA
-pIso13_PT11_Eh2_OXA-48;pIso5_PT3_Ka1_OXA-48;4;NA;0.1028;NA
-pIso13_PT11_Eh2_OXA-48;pIso6_PT4_Cf2_OXA-48;3;NA;0.1024;NA
-pIso13_PT11_Eh2_OXA-48;pIso7_PT5_Ec2_OXA-48;6;NA;0.1211;NA
-pIso13_PT11_Eh2_OXA-48;pIso8_PT6_Kp2_OXA-48;2;NA;0.07675;NA
-pIso13_PT11_Eh2_OXA-48;pIso9_PT7_Ec3_OXA-48;4;NA;0.1387;NA
-pIso14_PT12_Kp5_OXA-48;pIso15_PT13_Ec5_OXA-48;4;NA;0.09911;NA
-pIso14_PT12_Kp5_OXA-48;pIso1_PT1_Eh1_OXA-48;4;NA;0.09911;NA
-pIso14_PT12_Kp5_OXA-48;pIso2_PT1_Kp1_OXA-48;4;NA;0.09911;NA
-pIso14_PT12_Kp5_OXA-48;pIso3_PT1_Ec1_OXA-48;5;NA;0.1937;NA
-pIso14_PT12_Kp5_OXA-48;pIso4_PT2_Cf1_OXA-48;2;NA;0.009757;NA
-pIso14_PT12_Kp5_OXA-48;pIso5_PT3_Ka1_OXA-48;4;NA;0.09955;NA
-pIso14_PT12_Kp5_OXA-48;pIso6_PT4_Cf2_OXA-48;4;NA;0.09911;NA
-pIso14_PT12_Kp5_OXA-48;pIso7_PT5_Ec2_OXA-48;6;NA;0.1265;NA
-pIso14_PT12_Kp5_OXA-48;pIso8_PT6_Kp2_OXA-48;2;NA;0.1029;NA
-pIso14_PT12_Kp5_OXA-48;pIso9_PT7_Ec3_OXA-48;4;NA;0.1565;NA
-pIso15_PT13_Ec5_OXA-48;pIso1_PT1_Eh1_OXA-48;0;NA;0;NA
-pIso15_PT13_Ec5_OXA-48;pIso2_PT1_Kp1_OXA-48;0;NA;0;NA
-pIso15_PT13_Ec5_OXA-48;pIso3_PT1_Ec1_OXA-48;1;NA;0;NA
-pIso15_PT13_Ec5_OXA-48;pIso4_PT2_Cf1_OXA-48;5;NA;0.1409;NA
-pIso15_PT13_Ec5_OXA-48;pIso5_PT3_Ka1_OXA-48;1;NA;0;NA
-pIso15_PT13_Ec5_OXA-48;pIso6_PT4_Cf2_OXA-48;3;NA;0.1163;NA
-pIso15_PT13_Ec5_OXA-48;pIso7_PT5_Ec2_OXA-48;3;NA;0;NA
-pIso15_PT13_Ec5_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.001827;NA
-pIso15_PT13_Ec5_OXA-48;pIso9_PT7_Ec3_OXA-48;1;NA;0;NA
-pIso1_PT1_Eh1_OXA-48;pIso2_PT1_Kp1_OXA-48;0;NA;0;NA
-pIso1_PT1_Eh1_OXA-48;pIso3_PT1_Ec1_OXA-48;1;NA;0;NA
-pIso1_PT1_Eh1_OXA-48;pIso4_PT2_Cf1_OXA-48;5;NA;0.1409;NA
-pIso1_PT1_Eh1_OXA-48;pIso5_PT3_Ka1_OXA-48;1;NA;0;NA
-pIso1_PT1_Eh1_OXA-48;pIso6_PT4_Cf2_OXA-48;3;NA;0.1163;NA
-pIso1_PT1_Eh1_OXA-48;pIso7_PT5_Ec2_OXA-48;3;NA;0;NA
-pIso1_PT1_Eh1_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.001827;NA
-pIso1_PT1_Eh1_OXA-48;pIso9_PT7_Ec3_OXA-48;1;NA;0;NA
-pIso2_PT1_Kp1_OXA-48;pIso3_PT1_Ec1_OXA-48;1;NA;0;NA
-pIso2_PT1_Kp1_OXA-48;pIso4_PT2_Cf1_OXA-48;5;NA;0.1409;NA
-pIso2_PT1_Kp1_OXA-48;pIso5_PT3_Ka1_OXA-48;1;NA;0;NA
-pIso2_PT1_Kp1_OXA-48;pIso6_PT4_Cf2_OXA-48;3;NA;0.1163;NA
-pIso2_PT1_Kp1_OXA-48;pIso7_PT5_Ec2_OXA-48;3;NA;0;NA
-pIso2_PT1_Kp1_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.001827;NA
-pIso2_PT1_Kp1_OXA-48;pIso9_PT7_Ec3_OXA-48;1;NA;0;NA
-pIso3_PT1_Ec1_OXA-48;pIso4_PT2_Cf1_OXA-48;5;NA;0.1409;NA
-pIso3_PT1_Ec1_OXA-48;pIso5_PT3_Ka1_OXA-48;2;NA;0;NA
-pIso3_PT1_Ec1_OXA-48;pIso6_PT4_Cf2_OXA-48;4;NA;0.1445;NA
-pIso3_PT1_Ec1_OXA-48;pIso7_PT5_Ec2_OXA-48;4;NA;0.04509;NA
-pIso3_PT1_Ec1_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.09464;NA
-pIso3_PT1_Ec1_OXA-48;pIso9_PT7_Ec3_OXA-48;2;NA;0.1051;NA
-pIso4_PT2_Cf1_OXA-48;pIso5_PT3_Ka1_OXA-48;5;NA;0.1415;NA
-pIso4_PT2_Cf1_OXA-48;pIso6_PT4_Cf2_OXA-48;5;NA;0.1409;NA
-pIso4_PT2_Cf1_OXA-48;pIso7_PT5_Ec2_OXA-48;6;NA;0.1771;NA
-pIso4_PT2_Cf1_OXA-48;pIso8_PT6_Kp2_OXA-48;3;NA;0.146;NA
-pIso4_PT2_Cf1_OXA-48;pIso9_PT7_Ec3_OXA-48;5;NA;0.2428;NA
-pIso5_PT3_Ka1_OXA-48;pIso6_PT4_Cf2_OXA-48;3;NA;0.1331;NA
-pIso5_PT3_Ka1_OXA-48;pIso7_PT5_Ec2_OXA-48;4;NA;0;NA
-pIso5_PT3_Ka1_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.00227;NA
-pIso5_PT3_Ka1_OXA-48;pIso9_PT7_Ec3_OXA-48;2;NA;0;NA
-pIso6_PT4_Cf2_OXA-48;pIso7_PT5_Ec2_OXA-48;5;NA;0.1211;NA
-pIso6_PT4_Cf2_OXA-48;pIso8_PT6_Kp2_OXA-48;3;NA;0.07295;NA
-pIso6_PT4_Cf2_OXA-48;pIso9_PT7_Ec3_OXA-48;4;NA;0.1271;NA
-pIso7_PT5_Ec2_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.02902;NA
-pIso7_PT5_Ec2_OXA-48;pIso9_PT7_Ec3_OXA-48;4;NA;0.03966;NA
-pIso8_PT6_Kp2_OXA-48;pIso9_PT7_Ec3_OXA-48;6;NA;0.06548;NA
+Plasmid A;Plasmid B;DCJ;community_DCJ;containment;community_containment;subcommunity_A;subcommunity_B;same_subcommunity;dcj_censored;subcommunity_status;p_tighter
+pIso10_PT8_Ec4_OXA-48;pIso11_PT9_Kp3_OXA-48;2;NA;0.02128;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso12_PT10_Kp4_OXA-48;2;NA;0.02125;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso13_PT11_Eh2_OXA-48;5;NA;0.02419;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso14_PT12_Kp5_OXA-48;4;NA;0.02011;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso15_PT13_Ec5_OXA-48;3;NA;0.1032;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso1_PT1_Eh1_OXA-48;3;NA;0.1032;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso2_PT1_Kp1_OXA-48;3;NA;0.1032;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso3_PT1_Ec1_OXA-48;4;NA;0.1679;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso4_PT2_Cf1_OXA-48;4;NA;0.02662;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso5_PT3_Ka1_OXA-48;3;NA;0.1036;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso6_PT4_Cf2_OXA-48;5;NA;0.1032;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso7_PT5_Ec2_OXA-48;6;NA;0.1407;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.09336;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso10_PT8_Ec4_OXA-48;pIso9_PT7_Ec3_OXA-48;3;NA;0.1271;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso12_PT10_Kp4_OXA-48;0;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso13_PT11_Eh2_OXA-48;4;NA;0.02639;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso14_PT12_Kp5_OXA-48;3;NA;0.04477;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso15_PT13_Ec5_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso1_PT1_Eh1_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso2_PT1_Kp1_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso3_PT1_Ec1_OXA-48;2;NA;0.1445;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso4_PT2_Cf1_OXA-48;4;NA;0.1409;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso5_PT3_Ka1_OXA-48;1;NA;0.0004718;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso6_PT4_Cf2_OXA-48;2;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso7_PT5_Ec2_OXA-48;4;NA;0.04108;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso8_PT6_Kp2_OXA-48;4;NA;0.03045;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso11_PT9_Kp3_OXA-48;pIso9_PT7_Ec3_OXA-48;2;NA;0.09574;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso13_PT11_Eh2_OXA-48;4;NA;0.02635;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso14_PT12_Kp5_OXA-48;3;NA;0.04471;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso15_PT13_Ec5_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso1_PT1_Eh1_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso2_PT1_Kp1_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso3_PT1_Ec1_OXA-48;2;NA;0.1445;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso4_PT2_Cf1_OXA-48;4;NA;0.1409;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso5_PT3_Ka1_OXA-48;1;NA;0.0004711;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso6_PT4_Cf2_OXA-48;2;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso7_PT5_Ec2_OXA-48;4;NA;0.04102;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso8_PT6_Kp2_OXA-48;4;NA;0.0304;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso12_PT10_Kp4_OXA-48;pIso9_PT7_Ec3_OXA-48;2;NA;0.09561;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso14_PT12_Kp5_OXA-48;2;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso15_PT13_Ec5_OXA-48;4;NA;0.1024;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso1_PT1_Eh1_OXA-48;4;NA;0.1024;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso2_PT1_Kp1_OXA-48;4;NA;0.1024;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso3_PT1_Ec1_OXA-48;5;NA;0.1735;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso4_PT2_Cf1_OXA-48;2;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso5_PT3_Ka1_OXA-48;4;NA;0.1028;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso6_PT4_Cf2_OXA-48;3;NA;0.1024;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso7_PT5_Ec2_OXA-48;6;NA;0.1211;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso8_PT6_Kp2_OXA-48;2;NA;0.07675;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso13_PT11_Eh2_OXA-48;pIso9_PT7_Ec3_OXA-48;4;NA;0.1387;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso14_PT12_Kp5_OXA-48;pIso15_PT13_Ec5_OXA-48;4;NA;0.09911;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso14_PT12_Kp5_OXA-48;pIso1_PT1_Eh1_OXA-48;4;NA;0.09911;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso14_PT12_Kp5_OXA-48;pIso2_PT1_Kp1_OXA-48;4;NA;0.09911;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso14_PT12_Kp5_OXA-48;pIso3_PT1_Ec1_OXA-48;5;NA;0.1937;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso14_PT12_Kp5_OXA-48;pIso4_PT2_Cf1_OXA-48;2;NA;0.009757;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso14_PT12_Kp5_OXA-48;pIso5_PT3_Ka1_OXA-48;4;NA;0.09955;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso14_PT12_Kp5_OXA-48;pIso6_PT4_Cf2_OXA-48;4;NA;0.09911;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso14_PT12_Kp5_OXA-48;pIso7_PT5_Ec2_OXA-48;6;NA;0.1265;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso14_PT12_Kp5_OXA-48;pIso8_PT6_Kp2_OXA-48;2;NA;0.1029;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso14_PT12_Kp5_OXA-48;pIso9_PT7_Ec3_OXA-48;4;NA;0.1565;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso15_PT13_Ec5_OXA-48;pIso1_PT1_Eh1_OXA-48;0;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso15_PT13_Ec5_OXA-48;pIso2_PT1_Kp1_OXA-48;0;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso15_PT13_Ec5_OXA-48;pIso3_PT1_Ec1_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso15_PT13_Ec5_OXA-48;pIso4_PT2_Cf1_OXA-48;5;NA;0.1409;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso15_PT13_Ec5_OXA-48;pIso5_PT3_Ka1_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso15_PT13_Ec5_OXA-48;pIso6_PT4_Cf2_OXA-48;3;NA;0.1163;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso15_PT13_Ec5_OXA-48;pIso7_PT5_Ec2_OXA-48;3;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso15_PT13_Ec5_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.001827;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso15_PT13_Ec5_OXA-48;pIso9_PT7_Ec3_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso1_PT1_Eh1_OXA-48;pIso2_PT1_Kp1_OXA-48;0;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso1_PT1_Eh1_OXA-48;pIso3_PT1_Ec1_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso1_PT1_Eh1_OXA-48;pIso4_PT2_Cf1_OXA-48;5;NA;0.1409;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso1_PT1_Eh1_OXA-48;pIso5_PT3_Ka1_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso1_PT1_Eh1_OXA-48;pIso6_PT4_Cf2_OXA-48;3;NA;0.1163;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso1_PT1_Eh1_OXA-48;pIso7_PT5_Ec2_OXA-48;3;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso1_PT1_Eh1_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.001827;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso1_PT1_Eh1_OXA-48;pIso9_PT7_Ec3_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso2_PT1_Kp1_OXA-48;pIso3_PT1_Ec1_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso2_PT1_Kp1_OXA-48;pIso4_PT2_Cf1_OXA-48;5;NA;0.1409;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso2_PT1_Kp1_OXA-48;pIso5_PT3_Ka1_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso2_PT1_Kp1_OXA-48;pIso6_PT4_Cf2_OXA-48;3;NA;0.1163;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso2_PT1_Kp1_OXA-48;pIso7_PT5_Ec2_OXA-48;3;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso2_PT1_Kp1_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.001827;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso2_PT1_Kp1_OXA-48;pIso9_PT7_Ec3_OXA-48;1;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso3_PT1_Ec1_OXA-48;pIso4_PT2_Cf1_OXA-48;5;NA;0.1409;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso3_PT1_Ec1_OXA-48;pIso5_PT3_Ka1_OXA-48;2;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso3_PT1_Ec1_OXA-48;pIso6_PT4_Cf2_OXA-48;4;NA;0.1445;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso3_PT1_Ec1_OXA-48;pIso7_PT5_Ec2_OXA-48;4;NA;0.04509;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso3_PT1_Ec1_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.09464;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso3_PT1_Ec1_OXA-48;pIso9_PT7_Ec3_OXA-48;2;NA;0.1051;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso4_PT2_Cf1_OXA-48;pIso5_PT3_Ka1_OXA-48;5;NA;0.1415;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso4_PT2_Cf1_OXA-48;pIso6_PT4_Cf2_OXA-48;5;NA;0.1409;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso4_PT2_Cf1_OXA-48;pIso7_PT5_Ec2_OXA-48;6;NA;0.1771;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso4_PT2_Cf1_OXA-48;pIso8_PT6_Kp2_OXA-48;3;NA;0.146;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso4_PT2_Cf1_OXA-48;pIso9_PT7_Ec3_OXA-48;5;NA;0.2428;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso5_PT3_Ka1_OXA-48;pIso6_PT4_Cf2_OXA-48;3;NA;0.1331;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso5_PT3_Ka1_OXA-48;pIso7_PT5_Ec2_OXA-48;4;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso5_PT3_Ka1_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.00227;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso5_PT3_Ka1_OXA-48;pIso9_PT7_Ec3_OXA-48;2;NA;0;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso6_PT4_Cf2_OXA-48;pIso7_PT5_Ec2_OXA-48;5;NA;0.1211;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso6_PT4_Cf2_OXA-48;pIso8_PT6_Kp2_OXA-48;3;NA;0.07295;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso6_PT4_Cf2_OXA-48;pIso9_PT7_Ec3_OXA-48;4;NA;0.1271;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso7_PT5_Ec2_OXA-48;pIso8_PT6_Kp2_OXA-48;5;NA;0.02902;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso7_PT5_Ec2_OXA-48;pIso9_PT7_Ec3_OXA-48;4;NA;0.03966;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
+pIso8_PT6_Kp2_OXA-48;pIso9_PT7_Ec3_OXA-48;6;NA;0.06548;NA;community_0_subcommunity_7129;community_0_subcommunity_7129;True;False;no_baseline;NA
 
 </script>
 <script id="ref-data" type="text/plain" data-enc="gzip-base64">
@@ -538,15 +523,18 @@ H4sICAAAAAAC/3JlZmVyZW5jZV9kYi50c3YArL1Pj105ruC5rvkwBf2hRHJZ8KaAiHBkGs6y05tET/cs
    CONFIG: the single expected results file, read from this folder only.
    No upload, no fallback file names.
    ============================================================ */
-const CSV_FILE = 'final_output.csv';
+const CSV_FILE = 'final_output_extended.csv';
 const REF_FILE = 'reference_db.tsv';
 const EXPECTED = [
   ['Plasmid A','text','required'],['Plasmid B','text','required'],['DCJ','number ≥ 0','required'],
+  ['subcommunity_A','text','recommended: subcommunity of each plasmid (also subcommunity_B)'],['dcj_censored','True / False','optional: censored pairs are left out'],
   ['containment','number 0–1','optional: drawn as its own heatmap'],['mash','number ≥ 0','optional: Mash distance, drawn as its own heatmap']];
 const EXPECTED_REF = [
   ['plasmid_1','text','required'],['plasmid_2','text','required'],['subcommunity','text','required (or subcommunity)'],
   ['dcj','number ≥ 0','required'],['containment','number 0–1 or NA','optional (not used for the judgement)']];
 const VERSION = 'v5.0';
+const PLING_DCJ = 4, PLING_CONT = 0.5;   // the pipeline's default --dcj and --containment thresholds (heatmap scale and marker)
+let ASSUME_SOLE = false;               // user choice: judge unmatched subcommunities against the only one in the reference
 
 /* ---------- helpers ---------- */
 const $ = id => document.getElementById(id);
@@ -577,7 +565,8 @@ const COLS = {a:['plasmida','plasmid1','source','from','query','id1'],b:['plasmi
   dcj:['dcj','dcjdistance'],cd:['communitydcj','baselinedcj','dcjbaseline'],
   cont:['containment','containmentscore'],cc:['communitycontainment','baselinecontainment'],
   mash:['mash','mashdistance','mashdist','mashd'],
-  comm:['community','community','communityid','cluster']};
+  comm:['community','community','communityid','cluster'],
+  sa:['subcommunitya'], sb:['subcommunityb'], cens:['dcjcensored']};
 const META_BASES = {geo:['country','geography','geo','location','region','geolocation'], host:['host','hostspecies','hostorganism','organism','species'],
   date:['date','collectiondate','isolationdate','sampledate','year','collectionyear']};
 function metaIdx(headers, bases){
@@ -704,19 +693,21 @@ function build(text, refText){
   const bad = (msg) => { const e=new Error(msg); e.kind='invalid'; e.header=p.header; e.idx=idx; throw e; };
   if(idx.a<0||idx.b<0) bad('Plasmid name column(s) missing: ' + [idx.a<0&&'Plasmid A',idx.b<0&&'Plasmid B'].filter(Boolean).join(', ') + '.');
   if(idx.dcj<0 && idx.cont<0) bad('No metric column found: at least one of DCJ or containment is required.');
-  const has = {dcj:idx.dcj>=0, cont:idx.cont>=0, cd:idx.cd>=0, cc:idx.cc>=0, comm:idx.comm>=0};
+  const has = {dcj:idx.dcj>=0, cont:idx.cont>=0, cd:idx.cd>=0, cc:idx.cc>=0, comm:idx.comm>=0, sub:idx.sa>=0||idx.sb>=0};
   S.has = has; S.suppliedBaselines = suppliedBaselines;
   buildRef(refText);
   if(!has.dcj) bad('The results file needs a DCJ column: the reference database holds DCJ distances only.');
   if(has.cont){ has.cont=false; S.contIgnored=true; }   // no reference for containment, so it cannot be judged
   const MD = {}; S.hasMd = {}; for(const f of Object.keys(META_BASES)){ MD[f] = metaIdx(p.header, META_BASES[f]); S.hasMd[f] = MD[f].a>=0 || MD[f].b>=0 || MD[f].s>=0; }
+  const nz = v => /^(na|n\/a|nan|null|none)?$/i.test(String(v).trim()) ? '' : String(v).trim();
   const num = v => parseFloat(p.delim===',' ? v : String(v).replace(',','.'));   // tolerate decimal commas
-  const qc = {delim:p.delim, header:p.header, rawRows:p.rows.length, nonNumeric:0, outOfRange:0, selfPairs:0, dups:0, missingVals:0, hasComm:has.comm, badDates:0};
+  const qc = {delim:p.delim, header:p.header, rawRows:p.rows.length, nonNumeric:0, outOfRange:0, selfPairs:0, dups:0, missingVals:0, hasComm:has.comm, badDates:0, censored:0};
   const seen = new Set(); let rows=[];
   p.rows.forEach((r,ln)=>{
     const g = k => (r[idx[k]]??'').trim();
-    const o = {a:g('a'), b:g('b'), dcj:has.dcj?num(g('dcj')):0, cd:has.cd?num(g('cd')):NaN, cont:has.cont?num(g('cont')):0, cc:has.cc?num(g('cc')):NaN, contRaw:idx.cont>=0?num(g('cont')):NaN, mashRaw:idx.mash>=0?num(g('mash')):NaN, line:ln+2};
+    const o = {a:g('a'), b:g('b'), dcj:has.dcj?num(g('dcj')):0, cd:has.cd?num(g('cd')):NaN, cont:has.cont?num(g('cont')):0, cc:has.cc?num(g('cc')):NaN, contRaw:idx.cont>=0?num(g('cont')):NaN, mashRaw:idx.mash>=0?num(g('mash')):NaN, sa:nz(g('sa')), sb:nz(g('sb')), cens:/^(true|1|yes|t)$/i.test(g('cens')), line:ln+2};
     if(!o.a||!o.b){ qc.missingVals++; return; }
+    if(o.cens){ qc.censored++; return; }   // DCJ was not computed for this pair (containment above Pling's threshold)
     const need=[]; if(has.dcj)need.push(o.dcj); if(has.cont)need.push(o.cont); if(has.cd)need.push(o.cd); if(has.cc)need.push(o.cc);
     if(need.some(x=>!Number.isFinite(x))){ qc.nonNumeric++; return; }
     if((has.cont&&(o.cont<0||o.cont>1))||(has.cc&&(o.cc<0||o.cc>1))||(has.dcj&&o.dcj<0)||(has.cd&&o.cd<0)) qc.outOfRange++;
@@ -727,7 +718,9 @@ function build(text, refText){
     for(const f of ['geo','host','date']){ if(!S.hasMd[f]) continue; const m = MD[f];
       const val = side => { const i = side==='a' ? (m.a>=0?m.a:m.s) : (m.b>=0?m.b:m.s); if(i<0) return ''; const v=(r[i]??'').trim(); return /^(na|n\/a|nan|null|none|unknown|-)?$/i.test(v) ? '' : v; };
       o.mg[f] = [val('a'), val('b')]; }
-    o.gc = has.comm ? g('comm') : '';
+    o.gc = has.comm ? nz(g('comm')) : '';
+    o.mixed = !!(o.sa && o.sb && o.sa !== o.sb);   // the two plasmids sit in different subcommunities
+    if(!o.gc && o.sa && !o.mixed) o.gc = o.sa;
     rows.push(o);
   });
   if(!rows.length) bad(`No valid data rows: all ${p.rows.length} row(s) have missing names or non-numeric values.`);
@@ -740,16 +733,18 @@ function build(text, refText){
   if(!rows.length) bad('No input-to-input pairs found: every pair in the results file has exactly one plasmid in the reference database. The results file needs the suspected plasmids compared with each other.');
   // subcommunity of each input plasmid: reference membership, the community column, or its reference partners
   const votes={}; const vote=(n,c)=>{ if(!c) return; (votes[n]||(votes[n]={}))[c]=(votes[n][c]||0)+1; };
-  allRows.forEach(o=>{ vote(o.a,o.gc||(o.src==='cross'?R.comm[o.b]:'')); if(o.src==='input') vote(o.b,o.gc); });
+  allRows.forEach(o=>{ vote(o.a,o.sa||o.gc||(o.src==='cross'?R.comm[o.b]:'')); if(o.src==='input') vote(o.b,o.sb||o.gc); });
   const plComm=n=>R.comm[n]||(votes[n]?Object.entries(votes[n]).sort((x,y)=>y[1]-x[1])[0][0]:'');
   const sole=R.groups.size===1?[...R.groups.keys()][0]:'';   // the reference holds one subcommunity: everything unassigned belongs to it
   S.assumedSingle=0;
-  rows.forEach(o=>{ let k=o.gc||plComm(o.a)||plComm(o.b); if(!k&&sole){ k=sole; S.assumedSingle++; } o.grpKey=R.find(k||'')||k||'(unassigned)'; });
+  // The subcommunity id belongs to one database build. The only-subcommunity fallback applies when the file names none, or when the user asks for it.
+  const useSole=sole&&(ASSUME_SOLE||(!has.sub&&!has.comm));
+  rows.forEach(o=>{ const k=o.mixed?'(spans subcommunities)':(o.gc||plComm(o.a)||plComm(o.b)); let key=R.find(k||''); if(!key&&useSole&&(!k||ASSUME_SOLE)){ key=sole; S.assumedSingle++; } o.grpKey=key||k||'(unassigned)'; });
   S.cross.forEach(o=>{ const k=o.gc||R.comm[o.b]; o.grpKey=R.find(k)||k; });
   { const small=new Set(); R.groups.forEach((g,k)=>{ if(g.n<MIN_REF_PAIRS) small.add(k); });
     const keep=[], drop={}; rows.forEach(o=>{ const k=o.grpKey; if(small.has(k)||!R.groups.has(k)){ const d=drop[k]||(drop[k]={pairs:0,ref:R.groups.has(k)?R.groups.get(k).n:0}); d.pairs++; } else keep.push(o); });
     S.notAssessed=Object.entries(drop).map(([key,v])=>({key,pairs:v.pairs,ref:v.ref})); rows=keep;
-    if(!rows.length) bad(`No assessable pairs: every subcommunity in the results file is either missing from the reference database or has a reference of fewer than ${MIN_REF_PAIRS} pairs (${S.notAssessed.map(x=>x.key).join(', ')}).`); }
+    if(!rows.length){ const e=new Error(`No assessable pairs: every subcommunity in the results file is either missing from the bundled reference database or has a reference of fewer than ${MIN_REF_PAIRS} pairs (${S.notAssessed.map(x=>x.key).join(', ')}). Subcommunity ids belong to one database build, so the same id in another database can be a different group.`); e.kind='invalid'; e.header=p.header; e.idx=idx; if(sole&&!ASSUME_SOLE) e.offerSole=R.groups.get(sole).label; throw e; } }
   const keys = [...new Set(rows.map(r=>r.grpKey))];
   S.grps = keys.map((k,i)=>({key:k, label:R.groups.has(k)?R.groups.get(k).label:k, i, n:rows.filter(r=>r.grpKey===k).length}));
   const gi = Object.fromEntries(S.grps.map(g=>[g.key,g]));
@@ -1020,27 +1015,40 @@ function renderHeat(){
     if(Number.isFinite(d)){ const r={a:an[i],b:an[j],dcj:d,cp:pctCloser(g,'dcj',d)}; val.set(K2(an[i],an[j]),r); val.set(K2(an[j],an[i]),r); } } }
   // one order for every heatmap (by DCJ), so the same plasmids line up in each panel
   const ordered=[]; S.grps.forEach(g=>{ const its=items.filter(x=>x.g===g); if(!its.length) return;
-    const ord=clusterOrder(its.filter(x=>!x.ref).map(x=>x.name),(a,b)=>{ const r=val.get(K2(a,b)); return r?r.dcj:NaN; }), byN=new Map(its.map(x=>[x.name,x]));
+    const ord=clusterOrder(its.filter(x=>!x.ref).map(x=>x.name),(a,b)=>{ const r=val.get(K2(a,b)); if(!r) return NaN; const d=Math.min(r.dcj/(2*PLING_DCJ),1); return Number.isFinite(r.contRaw)?(d+Math.min(r.contRaw/(2*PLING_CONT),1))/2:d; }), byN=new Map(its.map(x=>[x.name,x]));
     its.filter(x=>x.ref).forEach(x=>ordered.push(x)); ord.forEach(n=>ordered.push(byN.get(n))); });
   const ix=new Map(ordered.map((x,i)=>[x.name,i])), nRef=ordered.filter(x=>x.ref).length;
-  $('hmNote').textContent=`${ordered.length-nRef} input plasmids`+(capped?` (the ${MAXN} most-connected of ${S.plasmids.length})`:'')+(nRef?` + ${nRef} known reference plasmid${nRef===1?'':'s'} from your file (grey labels)`:'')+'. The same order is used in every heatmap: by DCJ similarity inside each subcommunity, so tight subgroups form blocks. Blank cells have no value in the data.';
+  $('hmNote').textContent=`${ordered.length-nRef} input plasmids`+(capped?` (the ${MAXN} most-connected of ${S.plasmids.length})`:'')+(nRef?` + ${nRef} known reference plasmid${nRef===1?'':'s'} from your file (grey labels)`:'')+'. The same order is used in every heatmap: by DCJ (and containment, when present) similarity inside each subcommunity, so tight subgroups form blocks. Blank cells have no value in the data.';
   const lab=ordered.map(x=>x.name), show=ordered.length<=70, bounds=[]; ordered.forEach((x,i)=>{ if(i&&x.g!==ordered[i-1].g) bounds.push({xAxis:i-.5}); });
   const lc=(v,i)=>ordered[i]&&ordered[i].ref?REFB:t.text, ramp=['#e9f0fb','#9dbfee','#4a86de','#173f82'];
+  const hexRgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+  const rampAt=u=>{ const x=Math.min(1,Math.max(0,u))*(ramp.length-1), i=Math.min(ramp.length-2,Math.floor(x)), f=x-i, a=hexRgb(ramp[i]), b=hexRgb(ramp[i+1]); return '#'+a.map((v,k)=>Math.round(v+(b[k]-v)*f).toString(16).padStart(2,'0')).join(''); };
+  // own colour bar (drawn as graphic): 0 at the top, dark = closer, with the Pling threshold marked
+  const cbar=(hi,stops,thr,sat,name)=>{ const t=T(), H=200, Wd=16, yv=v=>H*Math.min(1,v/hi), nice=v=>String(+v.toPrecision(3)), ch=[
+      {type:'rect',shape:{x:0,y:0,width:Wd,height:H},style:{fill:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:stops.map((c,i)=>({offset:i/(stops.length-1),color:c}))},stroke:t.border,lineWidth:1}},
+      {type:'text',x:0,y:-22,style:{text:'closer',fill:t.muted,font:'11px sans-serif'}},
+      {type:'text',x:0,y:H+8,style:{text:'farther'+(sat?' (≥ '+nice(hi)+')':''),fill:t.muted,font:'11px sans-serif'}}];
+    (()=>{ const raw=hi/4, mag=Math.pow(10,Math.floor(Math.log10(raw))), st=[1,2,2.5,5,10].map(m=>m*mag).find(x=>x>=raw*.9)||raw, out=[]; for(let v=0;v<=hi*1.0001;v+=st) out.push(+v.toPrecision(6)); return out; })().filter(v=>!(Number.isFinite(thr)&&Math.abs(v-thr)<.07*hi)).forEach(v=>ch.push({type:'text',x:Wd+8,y:yv(v)-6,style:{text:nice(v),fill:t.muted,font:'11px sans-serif'}}));
+    if(Number.isFinite(thr)&&thr<=hi){ ch.push({type:'line',shape:{x1:-5,y1:yv(thr),x2:Wd+5,y2:yv(thr)},style:{stroke:t.text,lineWidth:1.6,lineDash:[3,2]}},{type:'text',x:Wd+8,y:yv(thr)-6,style:{text:nice(thr)+' · Pling threshold',fill:t.text,font:'600 11px sans-serif'}}); }
+    ch.push({type:'text',x:0,y:H+26,style:{text:name+(Number.isFinite(thr)&&thr>hi?' (Pling threshold '+nice(thr)+' is beyond the scale)':''),fill:t.muted,font:'11px sans-serif'}});
+    return [{type:'group',right:18,top:'middle',children:ch}]; };
   const draw=(id,kind)=>{
     const pick=r=>kind==='pos'?r.cp:kind==='dcj'?r.dcj:kind==='cont'?r.contRaw:r.mashRaw, data=[]; let vmin=Infinity,vmax=-Infinity;
     val.forEach((r,k)=>{ const [a,b]=k.split('\u0000'); if(!ix.has(a)||!ix.has(b)) return; const v=pick(r); if(!Number.isFinite(v)) return; vmin=Math.min(vmin,v); vmax=Math.max(vmax,v); data.push([ix.get(a),ix.get(b),v]); });
     if(!data.length) return false;
     const nm={pos:'Closer than … % of the reference',dcj:'DCJ',cont:'Containment',mash:'Mash distance'}[kind];
+    const cap=kind==='dcj'?2*PLING_DCJ:kind==='cont'?Math.min(1,2*PLING_CONT):NaN, thr=kind==='dcj'?PLING_DCJ:kind==='cont'?PLING_CONT:NaN, gam=kind==='dcj'?.5:kind==='cont'?.3:1;
+    const hi=Number.isFinite(cap)?Math.min(cap,vmax>0?vmax:cap):(vmax>0?vmax:1), stops=Array.from({length:17},(_,q)=>rampAt(1-Math.pow(q/16,gam)));
     const vm=kind==='pos'?{type:'piecewise',orient:'vertical',right:12,top:'center',textStyle:{color:t.muted},pieces:BANDS.map((b,j)=>j===0?{gte:95,lte:100,color:b[1],label:'closer than 95%'}:j===1?{gte:75,lt:95,color:b[1],label:'75–95%'}:j===2?{gte:25,lt:75,color:b[1],label:'typical (25–75%)'}:j===3?{gte:5,lt:25,color:b[1],label:'5–25%'}:{gte:0,lt:5,color:b[1],label:'looser than 95%'})}
-      :{min:kind==='dcj'?(vmin===vmax?vmin-1:vmin):0,max:vmax>0?vmax:1,precision:kind==='cont'?3:kind==='mash'?4:0,calculable:true,orient:'vertical',right:12,top:'center',inverse:kind!=='cont',textStyle:{color:t.muted},inRange:{color:ramp},
-        text:kind==='cont'?['more shared (high)','less shared (low)']:kind==='mash'?['farther (high distance)','closer (low distance)']:['farther (high DCJ)','closer (low DCJ)']};
+      :{show:false,min:0,max:hi,dimension:2,inRange:{color:stops},outOfRange:{color:[stops[16]]}};
+    const bar=kind==='pos'?[]:cbar(hi,stops,thr,vmax>hi,kind==='cont'?'containment distance':kind==='mash'?'Mash distance':'DCJ distance');
     ch(id).setOption(base({
       grid:{left:show?165:20,right:210,top:20,bottom:show?150:20},
       tooltip:{...base().tooltip,position:'top',formatter:p=>{ const a=ordered[p.value[1]], b=ordered[p.value[0]], r=val.get(K2(a.name,b.name));
         return `<b>${esc(a.name)}</b>${a.ref?' <span style="opacity:.6">reference</span>':''}<br>↔ <b>${esc(b.name)}</b>${b.ref?' <span style="opacity:.6">reference</span>':''}<br>${esc(nm)}: ${fmt(p.value[2],4)}${kind!=='dcj'&&kind!=='pos'&&Number.isFinite(r.dcj)?`<br>DCJ ${r.dcj}`:''}${Number.isFinite(r.cp)?`<br><b>Closer than ${fmt(r.cp,0)}% of the reference pairs</b>`:''}`; }},
       xAxis:{type:'category',data:lab,show,axisLabel:{color:lc,rotate:60,fontSize:10,interval:0},splitArea:{show:false},axisLine:{show:false},axisTick:{show:false}},
       yAxis:{type:'category',data:lab,show,inverse:true,axisLabel:{color:lc,fontSize:10,interval:0},axisLine:{show:false},axisTick:{show:false}},
-      visualMap:vm,
+      visualMap:vm,graphic:{elements:bar},
       series:[{type:'heatmap',data,itemStyle:{borderColor:t.panel,borderWidth:show?1:0},emphasis:{itemStyle:{borderColor:t.text,borderWidth:1.5}},
         markLine:{silent:true,symbol:'none',label:{show:false},lineStyle:{color:t.text,width:1,type:'dashed',opacity:.5},data:[...bounds,...bounds.map(b=>({yAxis:b.xAxis}))]}}]
     }),true);
@@ -1348,7 +1356,7 @@ function renderSummary(){
   const cpv=V.map(r=>r.cp).filter(Number.isFinite).sort((a,b)=>a-b), medCp=cpv.length?qSorted(cpv,.5):NaN;
   const sups=gs.map(g=>supportOf(S.st.grp.get(g))), ev={yes:sups.filter(x=>x.k==='yes').length,no:sups.filter(x=>x.k==='no').length}; ev.rest=gs.length-ev.yes-ev.no;
   const mods = !n ? [] : [
-    ['qc','Data validation', qcBad?'fail':qcWarn?'warn':'pass', qcBad?`${q.nonNumeric+q.missingVals} unusable row(s) skipped`:qcWarn?`${q.dups} duplicate, ${q.selfPairs} self, ${q.outOfRange} out-of-range`:'All rows valid'],
+    ['qc','Data validation', qcBad?'fail':qcWarn?'warn':'pass', qcBad?`${q.nonNumeric+q.missingVals} unusable row(s) skipped`:qcWarn?`${q.dups} duplicate, ${q.selfPairs} self, ${q.outOfRange} out-of-range`:'All rows valid'+(q.censored?` · ${q.censored} censored pair(s) left out (DCJ not computed)`:'')],
     ...(S.st.all[5]&&Number.isFinite(S.st.all[5].est)?[['delta','Position in the reference', S.st.all[5].lo>50?'pass':S.st.all[5].hi<50?'fail':'warn',
       `input pairs are closer than ${fmt(S.st.all[5].est,0)}% of reference pairs on average${Number.isFinite(S.st.all[5].lo)?` (95% CI ${fmt(S.st.all[5].lo,0)}–${fmt(S.st.all[5].hi,0)}%; 50% = no difference)`:' (too few plasmids for an interval; 50% = no difference)'}`]]:[]),
     ['delta','Subcommunity evidence', ev.yes===gs.length?'pass':(ev.yes===0&&ev.no>0)?'fail':'warn',
@@ -1356,7 +1364,7 @@ function renderSummary(){
     ...(S.cross.length?[(()=>{ const c=ciOf(S.cross,[r=>r.cp])[0], nm=[...new Set(S.cross.map(r=>r.b))];
       return ['network','Input vs known reference plasmid', c&&c.lo>50?'pass':c&&c.hi<50?'fail':'warn',
         `${S.cross.length} pairs between your plasmids and ${nm.join(', ')} (in the reference): closer than ${fmt(c.est,0)}% of reference pairs on average${Number.isFinite(c.lo)?` (95% CI ${fmt(c.lo,0)}–${fmt(c.hi,0)}%)`:''}`]; })()]:[]),
-    ['normal','Reference coverage', S.unmatched.length?'warn':'pass', `${gs.length-S.unmatched.length} of ${gs.length} subcommunit${gs.length===1?'y':'ies'} found in the reference database${S.assumedSingle?' (no community column in the results file: assigned to the only subcommunity in the reference)':''}${S.cross.length?` · ${S.cross.length} input–reference pair(s)`:''}`],
+    ['normal','Reference coverage', (S.unmatched.length||(ASSUME_SOLE&&S.assumedSingle))?'warn':'pass', `${gs.length-S.unmatched.length} of ${gs.length} subcommunit${gs.length===1?'y':'ies'} found in the reference database${S.assumedSingle?(ASSUME_SOLE?' (assigned to the only subcommunity in the reference at your request: the ids in the results file do not match it)':' (no subcommunity in the results file: assigned to the only subcommunity in the reference)'):''}${S.cross.length?` · ${S.cross.length} input–reference pair(s)`:''}`],
     ['normal','Reference quality', (S.notAssessed.length||gs.some(g=>g.broad))?'warn':'pass',
       [S.notAssessed.length?`${S.notAssessed.length} subcommunit${S.notAssessed.length===1?'y':'ies'} not assessed (${S.notAssessed.map(x=>x.key+': '+(x.ref?'reference '+x.ref+' pair'+(x.ref===1?'':'s'):'not in the reference')+', '+x.pairs+' input pair'+(x.pairs===1?'':'s')+' left out').join('; ')})`:'',
        gs.some(g=>g.broad)?`broad reference (wide spread of DCJ values): ${gs.filter(g=>g.broad).map(g=>g.label).join(', ')}`:''].filter(Boolean).join(' · ')||`every subcommunity has a reference of at least ${MIN_REF_PAIRS} pairs and a narrow spread`],
@@ -1715,7 +1723,7 @@ kpiD:['Mean DCJ','Average double-cut-and-join distance: the minimum number of re
 kpiC:['Mean containment','Average fraction of one plasmid\'s sequence found in the other (0 to 1). The line underneath is the 95% confidence interval.','Higher means more shared sequence.','High containment together with low DCJ is the signature of closely related plasmids; either one alone is weaker evidence.'],
 kpiR:['Outbreak-related pairs','The count of pairs classified outbreak-related, with the share and its 95% confidence interval. The coloured bar splits all pairs by classification.','Green is outbreak-related, amber intermediate, red unrelated.','The share summarises how consistently the input plasmids look closer than their baseline. An interval that stays above 50% is stronger than a share that could easily dip below it.'],
 ci:['Confidence intervals','A 95% confidence interval (CI) is the range of values consistent with the data. Repeating the study many times, about 95% of such intervals would contain the true value. Here they are derived from the CSV by a percentile bootstrap that resamples plasmids (not pairs) 1000 times.','Narrow means precise; wide means few plasmids or high variability. For a gap to baseline, an interval entirely above 0 means the pairs are tighter than the baseline; spanning 0 means no clear difference. Gap rows are hidden when the baseline was derived from the same pairs, because the gap is then zero by construction.','Pairs that share a plasmid are not independent: 10 plasmids give 45 pairs, not 45 independent observations. Resampling plasmids keeps that structure and gives honest, usually wider, intervals. No interval is shown with fewer than 4 plasmids.'],
-qc:['Data validation','Integrity checks on final_output.csv and which expected columns were found.','Green ticks are clean; ⚠ marks something worth a look (duplicates, out-of-range values, missing optional columns).','Wrong or missing values silently distort every plot and statistic, so check this first when a result looks surprising.'],
+qc:['Data validation','Integrity checks on final_output_extended.csv and which expected columns were found.','Green ticks are clean; ⚠ marks something worth a look (duplicates, out-of-range values, missing optional columns).','Wrong or missing values silently distort every plot and statistic, so check this first when a result looks surprising.'],
 genstats:['Plasmid statistics','One row per plasmid, summarised across all its pairs in view.','"Related pairs" is how many of its pairs are outbreak-related. Click a name to filter the whole report to that plasmid. Hover the ⓘ in a column header to see how that column is derived and why it is needed.','Plasmids with few related pairs are outliers in a suspected cluster and are candidates to exclude or investigate. Plasmids related to everything sit at the core of the cluster.'],
 scatter:['DCJ distance vs containment','Every pair as a point: containment on x, DCJ on y.','Points in the shaded quadrant have high containment and low DCJ. In baseline mode the lines mark the mean baseline; in fixed mode they follow the sliders. Jitter only separates overlapping integer DCJ values.','This is the main picture of the relatedness signal. A dense cluster in the shaded quadrant supports a common origin; a spread across the plot means diverse plasmids.'],
 dist:['Distributions','How DCJ and containment values are spread, stacked by classification.','The dashed line is the mean subcommunity baseline. Bars to the favourable side of it are closer than the subcommunity norm.','A single mean can hide a bimodal group (a tight cluster plus unrelated outliers). The shape shows whether the mean represents most pairs.'],
@@ -1831,9 +1839,9 @@ Object.entries({
   deltaPlot:' Click a ring title or a sector to drill down; Back moves up a level.'
 }).forEach(([k,t])=>{ if(INFO[k]) INFO[k][2]+=t; });
 Object.assign(INFO,{
-'heatmap':['Pairwise heatmaps',"A matrix of every pair of your plasmids for each measure in your results file: DCJ, and containment and Mash distance when the file has them. All heatmaps use the same plasmid order (by DCJ similarity inside each subcommunity), so the same plasmids line up in every panel. Known reference plasmids that also appear in your file are added with grey labels.","A block of similar plasmids shows up as a block of the same colour. If the DCJ, containment and Mash heatmaps show the same blocks, the measures agree; a plasmid that stands out in one but not in another is worth a look. Blank cells have no value in the data.","It is the pairwise view of the README question: which plasmids form a tight group, whether any plasmid does not belong, and whether the different measures agree."],
-'heatDcj':['DCJ heatmap',"DCJ distance between every pair of your plasmids. The colour can show where each pair falls in the reference (default) or the raw DCJ.","Position in the reference: dark green = closer than 95% of the reference pairs, grey = typical, red = looser than 95%. Raw DCJ: darker = more similar (low DCJ).","DCJ is the measure the report judges against the reference."],
-'heatCont':['Containment heatmap',"Containment between every pair of your plasmids, as given in your results file (0 to 1, the fraction of one plasmid's sequence found in the other).","Darker = more shared sequence. There is no reference baseline for containment, so the values are shown as supplied and are not part of the judgement.","It shows whether the plasmids that are close by DCJ also share sequence."],
+'heatmap':['Pairwise heatmaps',"A matrix of every pair of your plasmids for each measure in your results file: DCJ, and containment and Mash distance when the file has them. All heatmaps use the same plasmid order (by DCJ (and containment, when present) similarity inside each subcommunity), so the same plasmids line up in every panel. Known reference plasmids that also appear in your file are added with grey labels.","A block of similar plasmids shows up as a block of the same colour. If the DCJ, containment and Mash heatmaps show the same blocks, the measures agree; a plasmid that stands out in one but not in another is worth a look. Blank cells have no value in the data.","It is the pairwise view of the README question: which plasmids form a tight group, whether any plasmid does not belong, and whether the different measures agree."],
+'heatDcj':['DCJ heatmap',"DCJ distance between every pair of your plasmids. The colour can show where each pair falls in the reference (default) or the raw DCJ.","Position in the reference: dark green = closer than 95% of the reference pairs, grey = typical, red = looser than 95%. Raw DCJ: darker = closer (low DCJ). The scale runs from 0 to twice the Pling threshold (8), cells beyond it take the lightest colour, and a dashed line marks the Pling threshold (4). The scale is a square-root scale, so small distances get more of the colour range.","DCJ is the measure the report judges against the reference."],
+'heatCont':['Containment heatmap',"Containment distance between every pair of your plasmids, as given in your results file (0 = the smaller plasmid is fully contained in the larger, 1 = nothing shared).","Darker = closer (low distance). The scale runs from 0 to 1 (twice the Pling threshold of 0.5), with a dashed line at the threshold, and small distances get more of the colour range. There is no reference baseline for containment, so the values are shown as supplied and are not part of the judgement.","It shows whether the plasmids that are close by DCJ also share sequence."],
 'heatMash':['Mash heatmap',"Mash distance between every pair of your plasmids, as given in your results file (0 = identical, towards 1 = unrelated).","Darker = closer (low Mash distance). There is no reference baseline for Mash, so the values are shown as supplied and are not part of the judgement.","It is an alignment-free check on the DCJ result: similar blocks in the DCJ and Mash heatmaps mean the two measures agree."]
 });
 Object.entries({
@@ -2071,7 +2079,7 @@ function initCollapsibles(){
   document.addEventListener('click',e=>{ const a=e.target.closest('a[href^="#"]'); const id=a&&a.getAttribute('href').slice(1), sec=id&&$(id); if(sec&&sec._open) sec._open(); },true);
 }
 
-(async function init(){
+async function init(){
   try{
     const [t,r]=await loadData(); build(t,r);
     $('loading').style.display='none'; $('app').style.display=''; $('topbar').style.visibility='visible';
@@ -2094,8 +2102,11 @@ function initCollapsibles(){
     else f.innerHTML=`<h2 style="margin-top:0">${esc(file)} is not in the expected format</h2>
       <p><b>${esc(err.message)}</b></p>${err.header?`<p>Columns found: ${err.header.map(h=>`<span class="kbd">${esc(h)}</span>`).join(' ')}</p>`:''}
       <p>Expected format:</p>${schema}${isRef?REF_NOTE:OPT_NOTE}`;
+    if(err.offerSole){ f.insertAdjacentHTML('beforeend',`<p><button id="assumeSole">Assess against subcommunity ${esc(err.offerSole)} of the bundled reference anyway</button> <span class="note">Only correct if your plasmids really belong to that group.</span></p>`);
+      $('assumeSole').onclick=()=>{ ASSUME_SOLE=true; f.style.display='none'; $('loading').style.display=''; init(); }; }
   }
-})();
+}
+init();
 </script>
 </body>
 </html>
