@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>clust-assess Report</title>
+<title>REVELIO Report</title>
 <script src="echarts.min.js"></script>
 <style>
 :root{
@@ -130,7 +130,7 @@ section>h2{margin-bottom:12px}
 <body>
 <div class="layout">
 <nav aria-label="Report modules">
-  <h1>clust-assess</h1>
+  <h1>REVELIO</h1>
   <div class="tag">Plasmid cluster assessment report</div>
   <div class="grp">Report</div>
   <a href="#summary" data-mod="summary"><span class="st"></span>Summary</a>
@@ -275,13 +275,15 @@ section>h2{margin-bottom:12px}
   <h2 id="h-network">Plasmid network</h2>
   <div class="toolrow">
     <button class="chip" id="nwBack" style="display:none" title="Go back one step">← Back</button>
+    <label class="f">View <select id="nwView" aria-label="Network view"><option value="close">Close pairs</option><option value="all">All pairs</option></select></label>
+    <label class="f" id="nwWithinL"><input type="checkbox" id="nwWithin"> Pairs within Pling's threshold (grey)</label>
     <label class="f">Layout <select id="nwLay"><option value="force">Force (closer = nearer)</option><option value="circular">Circular (by subcommunity)</option></select></label>
     <label class="f"><input type="checkbox" id="nwLbl" checked> Distances on lines</label>
-    <label class="f"><input type="checkbox" id="nwRel"> Outbreak-related edges only</label>
-    <label class="f"><input type="checkbox" id="nwNN"> 3 closest partners per plasmid only</label>
-    <label class="f"><input type="checkbox" id="nwRef" checked> Reference plasmids</label>
-    <label class="f">Line colour <select id="nwCol"><option value="cls">Classification</option><option value="band">Position in reference</option></select></label>
-    <label class="f"><input type="checkbox" id="nwX" checked> Input–reference links</label>
+    <label class="f oldOpt"><input type="checkbox" id="nwRel"> Outbreak-related edges only</label>
+    <label class="f oldOpt"><input type="checkbox" id="nwNN"> 3 closest partners per plasmid only</label>
+    <label class="f oldOpt"><input type="checkbox" id="nwRef" checked> Reference plasmids</label>
+    <label class="f oldOpt">Line colour <select id="nwCol"><option value="cls">Classification</option><option value="band">Position in reference</option></select></label>
+    <label class="f oldOpt"><input type="checkbox" id="nwX" checked> Input–reference links</label>
   </div>
   <p class="note" id="nwCrumb" style="margin:0 0 4px;font-size:13px"></p>
   <p class="note" id="nwNote" style="margin:0 0 8px"></p>
@@ -1026,15 +1028,87 @@ function convexHull(P){
 function drawHulls(cn,nodes){
   const sr=cn.getModel().getSeriesByIndex(0); if(!sr||!sr.coordinateSystem) return;
   const data=sr.getData(), cs=sr.coordinateSystem, byG=new Map();
-  nodes.forEach((x,i)=>{ const l=data.getItemLayout(i); if(!l||!isFinite(l[0])||!isFinite(l[1])) return; const q=cs.dataToPoint(l); if(!byG.has(x.g)) byG.set(x.g,[]); byG.get(x.g).push(q); });
+  nodes.forEach((x,i)=>{ if(!x.g) return; const l=data.getItemLayout(i); if(!l||!isFinite(l[0])||!isFinite(l[1])) return; const q=cs.dataToPoint(l); if(!byG.has(x.g)) byG.set(x.g,[]); byG.get(x.g).push(q); });
   const sig=[...byG].map(([g,pts])=>g.key+':'+pts.map(q=>Math.round(q[0])+','+Math.round(q[1])).join(';')).join('|');
   if(drawHulls._sig===sig) return; drawHulls._sig=sig;
   const els=[]; byG.forEach((pts,g)=>{ if(pts.length<2) return;
     const ring=[]; pts.forEach(q=>{ for(let k=0;k<12;k++){ const a=k*Math.PI/6; ring.push([q[0]+30*Math.cos(a),q[1]+30*Math.sin(a)]); } });
     const hull=convexHull(ring), col=catColor(g.i), top=hull.reduce((m,q)=>q[1]<m[1]?q:m,hull[0]);
     els.push({type:'polygon',id:'hull_'+g.key,z:0,silent:true,shape:{points:hull,smooth:.25},style:{fill:col+'14',stroke:col+'aa',lineWidth:1.6,lineDash:[7,5]}});
-    els.push({type:'text',id:'hlab_'+g.key,z:1,silent:true,x:top[0]-20,y:top[1]-20,style:{text:'Subcommunity '+g.label,fill:col,font:'600 12px sans-serif'}}); });
+    els.push({type:'text',id:'hlab_'+g.key,z:1,silent:true,x:top[0]-20,y:top[1]-20,style:{text:(g.pref||'Subcommunity ')+g.label,fill:col,font:'600 12px sans-serif'}}); });
   cn.setOption({graphic:{elements:els}},{replaceMerge:['graphic']});
+}
+
+
+/* ---------- close-pair network: only the close pairs are drawn, joined plasmids form close groups ---------- */
+function syncNetOpts(){
+  const close=$('nwView').value==='close', all=S.nd.level==='all';
+  document.querySelectorAll('#network .oldOpt').forEach(e=>e.hidden=close&&all);
+  $('nwWithinL').hidden=!(close&&all);
+}
+function renderNetClose(){
+  const id='chNet', t=T(), c=+$('zCut').value||1, circ=$('nwLay').value==='circular', showW=$('nwWithin').checked;
+  const rows=S.view, many=S.grps.length>1, zb=new Map(); S.grps.forEach(g=>zb.set(g,zBack(g,'dcj')));
+  const zOf=r=>{ const b=zb.get(r.grp); return b?(r.dcj-b.mean)/b.sd:NaN; };
+  const PL=Object.fromEntries(S.plasmids.map(p=>[p.name,p])), inNames=new Set(); rows.forEach(r=>{ inNames.add(r.a); inNames.add(r.b); });
+  if(!rows.length){ $('nwNote').textContent=''; $('nwKey').innerHTML=''; renderNetDetail(); return empty(id); }
+  const E=[], refG=new Map();
+  rows.forEach(r=>{ const z=zOf(r), close=z<=-c; if(close||(showW&&r.dcj<=PLING_DCJ)) E.push({r,z,close,k:'in'}); });
+  S.cross.forEach(r=>{ if(!inNames.has(r.a)||!r.grp) return; const z=zOf(r); if(z<=-c){ E.push({r,z,close:true,k:'x'}); refG.set(r.b,r.grp); } });
+  // close groups: connected sets of close pairs
+  const par=new Map(), fd=x=>{ while(par.get(x)!==x){ par.set(x,par.get(par.get(x))); x=par.get(x); } return x; };
+  const names=[...inNames,...refG.keys()]; names.forEach(n=>par.set(n,n));
+  E.filter(e=>e.close).forEach(e=>par.set(fd(e.r.a),fd(e.r.b)));
+  const mem=new Map(); names.forEach(n=>{ const r0=fd(n); (mem.get(r0)||mem.set(r0,[]).get(r0)).push(n); });
+  const groups=[...mem.values()].filter(a=>a.length>1).sort((x,y)=>y.length-x.length), cgOf=new Map();
+  groups.forEach((a,k)=>a.forEach(n=>cgOf.set(n,k)));
+  const pg=groups.map((a,k)=>({key:'cg'+k,i:k,label:String(k+1),pref:'Close group '}));
+  const deg={}; E.filter(e=>e.close).forEach(e=>{ deg[e.r.a]=(deg[e.r.a]||0)+1; deg[e.r.b]=(deg[e.r.b]||0)+1; });
+  const nodes=names.map(n=>({name:n,k:inNames.has(n)?'in':'ref',cg:cgOf.has(n)?cgOf.get(n):-1,g:null}));
+  if(circ) nodes.sort((x,y)=>(x.cg<0?99:x.cg)-(y.cg<0?99:y.cg)||(x.k==='in'?0:1)-(y.k==='in'?0:1)||x.name.localeCompare(y.name));
+  nodes.forEach(x=>{ x.g=x.cg>=0?pg[x.cg]:null; });
+  const nClose=E.filter(e=>e.close&&e.k==='in').length, nWithin=E.filter(e=>!e.close).length, nX=E.filter(e=>e.k==='x').length;
+  const touched=new Set(); E.forEach(e=>{ touched.add(e.r.a); touched.add(e.r.b); }); const nIso=[...inNames].filter(n=>!touched.has(n)).length;
+  $('nwNote').innerHTML=`${inNames.size} input plasmids · ${nClose} close pair${nClose===1?'':'s'} (z ≤ −${c}) · ${groups.length} close group${groups.length===1?'':'s'}${nWithin?` · ${nWithin} more within Pling's threshold`:''}${refG.size?` · ${refG.size} reference plasmid${refG.size===1?'':'s'} linked`:''}${nIso?` · ${nIso} with no close${showW?' or related':''} partner`:''} · About this view${infoBtn('refProv:net')}`;
+  REFPROV.net=['About this network view',
+    `Only close pairs are drawn: input pairs whose DCJ is at least ${c} standard deviation${c===1?'':'s'} below the mean of the reference pairs of their subcommunity (the same cutoff as the Closeness analysis). Faint grey lines are pairs that are within Pling's DCJ threshold (${PLING_DCJ}) but not close.`,
+    'Click a plasmid to see all its pairs, or a line for the pair. Switch the View to All pairs for the previous network with every pair.',
+    'Reference plasmids appear only when a close pair links them to one of your plasmids (dashed line).',
+    ['What is drawn','How to use it','Reference']];
+  const showN=nodes.length<=60, showE=$('nwLbl').checked&&nClose<=40;
+  const kitem=(sw,tx)=>keyItem(sw,tx);
+  $('nwKey').innerHTML=[kitem(`<i class="ln" style="border-top:4px solid ${t.text}"></i>`,'dark, thick line = close pair; darker and thicker = closer (z)'),kitem(lineSw('#c3c2b7','solid'),"faint grey line = within Pling's threshold, not close"),
+    ...(refG.size?[kitem(lineSw(t.text,'dashed'),'dashed line = input–reference pair'),kitem(`<i class="sw" style="background:${REFC};border:1.5px solid ${REFB}"></i>`,'light node = reference plasmid')]:[]),
+    kitem(`<i class="sw" style="background:${catColor(0)}"></i><i class="sw" style="background:${catColor(1)}"></i>`,'node colour and dashed outline = close group'),kitem('<i class="sw" style="background:#b8bcc4"></i>','grey node = in no close group'),
+    ...(many?[kitem('<i class="sw" style="background:#fff;border:3px solid '+catColor(0)+'"></i>','node ring = subcommunity')]:[]),
+    `<span>About the lines and nodes${infoBtn('refProv:net')}</span>`].join('');
+  const dist=r=>'DCJ '+r.dcj;
+  $(id).style.height='560px'; ch(id).resize();
+  ch(id).setOption(base({
+    tooltip:{...base().tooltip,formatter:p=>{
+      if(p.dataType==='edge'){ const e=p.data.e, r=e.r; return `<b>${esc(r.a)} ↔ ${esc(r.b)}</b>${e.k==='x'?' <span style="opacity:.6">input–reference</span>':''}<br>${dist(r)} · z = ${fmt(e.z,2)}${e.close?' (close)':" (within Pling's threshold, not close)"}${Number.isFinite(r.cp)?`<br><b>Closer than ${fmt(r.cp,0)}% of the reference pairs</b>`:''}`; }
+      const d=p.data;
+      if(d.kind==='ref') return `<b>${esc(d.name)}</b> <span style="opacity:.6">reference plasmid</span><br>Subcommunity ${esc(refG.get(d.name).label)}${d.cg>=0?`<br>Close group ${d.cg+1}`:''}`;
+      const q=PL[d.name]; return `<b>${esc(q.name)}</b> <span style="opacity:.6">input plasmid</span><br>Subcommunity ${esc(q.grp.label)}<br>${d.cg>=0?`Close group ${d.cg+1}`:'In no close group'} · ${d.deg} close pair(s)<br>Mean DCJ ${fmt(q.meanDcj)}${Number.isFinite(q.refPct)?` (closer than ${fmt(q.refPct,0)}% of reference pairs)`:''}`; }},
+    series:[{type:'graph',top:20,layout:circ?'circular':'force',circular:{rotateLabel:true},roam:true,draggable:!circ,
+      force:{repulsion:nodes.length>60?110:nodes.length>30?200:260,edgeLength:[40,150],gravity:.25,layoutAnimation:false},
+      label:{show:showN,position:circ?'outside':'right',color:t.text,fontSize:11},labelLayout:{hideOverlap:true},
+      edgeLabel:{show:showE,fontSize:10,color:t.text,textBorderColor:t.panel,textBorderWidth:3,formatter:p=>p.data.lbl||''},
+      emphasis:{focus:'adjacency',lineStyle:{width:6},edgeLabel:{show:true}},
+      data:nodes.map(x=>{ const col=x.cg>=0?catColor(x.cg):'#b8bcc4', dg=deg[x.name]||0;
+        return x.k==='in'?{name:x.name,kind:'in',cg:x.cg,deg:dg,symbolSize:12+Math.min(24,dg*3),itemStyle:{color:col,borderColor:many?catColor(PL[x.name].grp.i):t.panel,borderWidth:many?3:1.5}}
+          :{name:x.name,kind:'ref',cg:x.cg,symbolSize:12,itemStyle:{color:col+'66',borderColor:col,borderWidth:1.8},label:{color:t.muted,fontSize:10}}; }),
+      edges:E.map(e=>{ const cl=e.close?Math.min(1,Math.max(0,-e.z/3)):0;
+        return {source:e.r.a,target:e.r.b,kind:e.k,r:e.r,e,value:e.close?.3+cl:.04,lbl:e.close&&e.k==='in'?String(e.r.dcj):'',
+          lineStyle:e.close?{color:t.text,width:1.4+4*cl,opacity:.4+.5*cl,type:e.k==='x'?'dashed':'solid',curveness:circ?.15:.03}:{color:'#c3c2b7',width:1,opacity:.55,curveness:circ?.15:.03}}; })}]
+  }),true);
+  const cn=ch(id); cn.off('click'); cn.off('finished'); cn.off('graphRoam');
+  drawHulls._sig=''; drawHulls(cn,nodes); cn.on('finished',()=>drawHulls(cn,nodes)); cn.on('graphRoam',()=>drawHulls(cn,nodes)); [300,1000,2500].forEach(ms=>setTimeout(()=>drawHulls(cn,nodes),ms));
+  cn.on('click',e=>{
+    if(e.dataType==='edge'){ if(e.data.kind==='in'){ S.nd.pair=e.data.r; renderNetDetail(); } return; }
+    if(e.dataType==='node'&&e.data.kind==='in'){ const q=PL[e.data.name]; if(q) ndGo('plasmid',q.grp.key,q.name); }
+  });
+  renderNetDetail();
 }
 
 function renderNet(){
@@ -1043,6 +1117,7 @@ function renderNet(){
     if(!S.view.some(r=>r.grp.key===D.comm)) Object.assign(D,{level:'all',comm:null,p:null,pair:null,stack:[]});
     else if(D.level==='plasmid'&&!S.plasmids.some(q=>q.name===D.p)){ D.level='comm'; D.p=null; D.pair=null; }
   }
+  syncNetOpts(); if(D.level==='all'&&$('nwView').value==='close') return renderNetClose();
   let rows=S.view;
   if(D.level==='comm') rows=rows.filter(r=>r.grp.key===D.comm); else if(D.level==='plasmid') rows=rows.filter(r=>r.a===D.p||r.b===D.p);
   if($('nwRel').checked&&D.level!=='plasmid') rows=rows.filter(r=>r.cls==='Outbreak-related');
@@ -1162,8 +1237,8 @@ function renderNetDetail(){
   const kv=(k,v)=>`<tr><td style="width:200px;color:var(--muted)">${k}</td><td>${v}</td></tr>`;
   const refTxt=g=>g&&g.ref?`${g.ref.n.toLocaleString('en-US')} known pairs · mean DCJ ${fmt(g.ref.md)} · SD ${fmt(g.ref.sd)} · median ${fmt(histQ(g.ref.h,.5))} · 5th–95th percentile ${fmt(histQ(g.ref.h,.05))}–${fmt(histQ(g.ref.h,.95))}`:'not in the reference database';
   // breadcrumb and back button
-  const g0=D.comm?gOf(D.comm):null, cr=[D.level==='all'?'<b>All subcommunities</b>':lk('all','All subcommunities')];
-  if(D.level!=='all') cr.push(D.level==='comm'?`<b>Subcommunity ${esc(g0.label)}</b>`:lk('comm:'+D.comm,'Subcommunity '+g0.label));
+  const g0=D.comm?gOf(D.comm):null, one=S.grps.length===1, cr=[D.level==='all'?`<b>${one?'Network':'All subcommunities'}</b>`:lk('all',one?'Network':'All subcommunities')];
+  if(D.level!=='all'&&!one) cr.push(D.level==='comm'?`<b>Subcommunity ${esc(g0.label)}</b>`:lk('comm:'+D.comm,'Subcommunity '+g0.label));
   if(D.level==='plasmid') cr.push(`<b>${esc(D.p)}</b>`);
   $('nwCrumb').innerHTML=cr.join(' › ');
   $('nwBack').style.display=(D.level!=='all'||D.pair)?'':'none';
@@ -1404,7 +1479,7 @@ function wire(){
   $('btnExportOb').onclick=()=>exportCSV(S.view.filter(r=>r.cls==='Outbreak-related'),`clust_assess_outbreak_${S.meta.generated.slice(0,10)}.csv`);
   ['scColor','scJit','scLbl','scRef'].forEach(i=>$(i).onchange=renderScatter);
   ['zMet','zCut'].forEach(i=>$(i).onchange=renderClose);
-  $('hmMetric').onchange=renderHeat; $('hmRef').onchange=renderHeat; ['nwRel','nwLbl','nwNN','nwLay','nwRef','nwX','nwCol'].forEach(i=>$(i).onchange=renderNet);
+  $('hmMetric').onchange=renderHeat; $('hmRef').onchange=renderHeat; ['nwRel','nwLbl','nwNN','nwLay','nwRef','nwX','nwCol','nwView','nwWithin'].forEach(i=>$(i).onchange=renderNet); $('zCut').addEventListener('change',renderNet);
   $('posView').onchange=renderDelta; $('posBack').onclick=pdBack; $('posGrid').addEventListener('click',pdClick);
   { const grid=$('posGrid'), tip=document.createElement('div'); tip.id='posTip'; document.body.appendChild(tip);
     const place=e=>{ tip.style.left=Math.min(innerWidth-270,e.clientX+14)+'px'; tip.style.top=Math.min(innerHeight-90,e.clientY+14)+'px'; };
