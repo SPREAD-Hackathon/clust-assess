@@ -51,6 +51,7 @@ flowchart LR
 - [ ] environment (conda, singularity, etc) for ACCIO
 - [ ] download pipeline & results from CLIMB
 - [X] script to combine input plasmids with matched subcommunity and calculate pairwise distance (ACCIO find results and pull out plasmids from db)
+- [ ] add PLSDB (or other database file) as dependency
 - [ ] test dataset from Denmark IncN2
 - [ ] test statistics for pairwise distances - Celia - Gijs
 - [ ] interactive HTML output with plots for visualization - Effiong
