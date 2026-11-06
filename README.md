@@ -1,4 +1,4 @@
-# clust-assess
+# Revelio
 Assessing pling clusters of potentially related plasmids
 
 # Objective
@@ -50,7 +50,7 @@ flowchart LR
 - [X] script for distance distributions for subcommunity/containment and adding to nextflow
 - [ ] environment (conda, singularity, etc) for ACCIO
 - [ ] download pipeline & results from CLIMB
-- [ ] script to combine input plasmids with matched subcommunity and calculate pairwise distance (ACCIO find results and pull out plasmids from db)
-- [ ] test statistics for pairwise distances - Celia - Gijs
+- [X] script to combine input plasmids with matched subcommunity and calculate pairwise distance (ACCIO find results and pull out plasmids from db)
+- [X] test statistics for pairwise distances - Celia - Gijs
 - [ ] interactive HTML output with plots for visualization - Effiong
 - [ ] slide crafting - Celia/Greb (https://docs.google.com/presentation/d/10MKGGLl1-xBAk1CIupZDHvlDTj6iIlOrWHoXWIbNbCY/edit?usp=sharing)
