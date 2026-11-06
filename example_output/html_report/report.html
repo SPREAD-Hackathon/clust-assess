@@ -1220,7 +1220,7 @@ function drawHulls(cn,nodes){
 
 
 /* ---------- 3D network: drag to rotate, scroll to zoom, details pinned to the top-right corner ---------- */
-const N3={st:null,raf:0};
+const N3={st:null,raf:0}, NETLBL='#d9730d';   // distance labels on the network lines: a distinct colour instead of a larger font
 function show3d(on){
   $('chNet').style.display=on?'none':''; $('net3d').hidden=!on;
   if(!on){ if(N3.raf) cancelAnimationFrame(N3.raf); N3.raf=0; N3.st=null; ch('chNet').resize(); }
@@ -1279,7 +1279,7 @@ function render3d(nodes,edges,tipOf,opts){
       const col=e.close?t.text:'#c3c2b7', w=(e.close?1.2+3.6*e.cl:.9)*(.6+.6*near), op=(e.close?.35+.5*e.cl:.5)*(.45+.55*near)*(hv&&!hl?dim:1);
       out.push(`<line x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}" stroke="${col}" stroke-width="${(hl?w+1.6:w).toFixed(2)}" stroke-opacity="${hl?1:op.toFixed(2)}"${e.cross?' stroke-dasharray="6 4"':''} stroke-linecap="round"/>`);
       if(e.close) out.push(`<line data-e="${k}" x1="${A.x.toFixed(1)}" y1="${A.y.toFixed(1)}" x2="${B.x.toFixed(1)}" y2="${B.y.toFixed(1)}" stroke="transparent" stroke-width="11" style="cursor:pointer"/>`);
-      if(opts.showE&&e.lbl) out.push(`<text x="${((A.x+B.x)/2).toFixed(1)}" y="${((A.y+B.y)/2-3).toFixed(1)}" font-size="10" text-anchor="middle" fill="${t.text}" stroke="${t.panel}" stroke-width="3" paint-order="stroke" opacity="${(.4+.6*near).toFixed(2)}">${esc(e.lbl)}</text>`); });
+      if(opts.showE&&e.lbl) out.push(`<text x="${((A.x+B.x)/2).toFixed(1)}" y="${((A.y+B.y)/2-3).toFixed(1)}" font-size="10" font-weight="600" text-anchor="middle" fill="${NETLBL}" stroke="${t.panel}" stroke-width="3" paint-order="stroke" opacity="${(.4+.6*near).toFixed(2)}">${esc(e.lbl)}</text>`); });
     const ns=nodes.map((x,i)=>({x,i,z:pr[i].z})).sort((u,v)=>v.z-u.z);
     ns.forEach(({x,i})=>{ const q=pr[i], r=(x.k==='ref'?6:5+Math.min(10,x.deg*1.5))*q.f*Math.min(1.5,Math.max(.75,st.zoom)), on=!hv||i===hn||(hn>=0&&adj.has(i)), op=(.5+.5*q.near)*(on?1:dim);
       const fill=x.k==='ref'?x.color+'88':x.color, stroke=x.ring||(x.k==='ref'?x.color:t.panel);
@@ -1346,7 +1346,7 @@ function renderNetClose(){
     ['What is drawn','How to use it','Reference']];
   const showN=nodes.length<=60, showE=$('nwLbl').checked&&nClose<=40;
   const kitem=(sw,tx)=>keyItem(sw,tx);
-  $('nwKey').innerHTML=[kitem(`<i class="ln" style="border-top:4px solid ${t.text}"></i>`,'dark, thick line = close pair; darker and thicker = closer (z)'),kitem(lineSw('#c3c2b7','solid'),"faint grey line = within Pling's threshold, not close"),
+  $('nwKey').innerHTML=[kitem(`<i class="ln" style="border-top:4px solid ${t.text}"></i>`,'dark, thick line = close pair; darker and thicker = closer (z); orange number = its DCJ'),kitem(lineSw('#c3c2b7','solid'),"faint grey line = within Pling's threshold, not close"),
     ...(refG.size?[kitem(lineSw(t.text,'dashed'),'dashed line = input–reference pair'),kitem(`<i class="sw" style="background:${REFC};border:1.5px solid ${REFB}"></i>`,'light node = reference plasmid')]:[]),
     kitem(`<i class="sw" style="background:${catColor(0)}"></i><i class="sw" style="background:${catColor(1)}"></i>`,'node colour = close group (drag to rotate, scroll to zoom)'),kitem('<i class="sw" style="background:#b8bcc4"></i>','grey node = in no close group'),
     ...(many?[kitem('<i class="sw" style="background:#fff;border:3px solid '+catColor(0)+'"></i>','node ring = subcommunity')]:[]),
@@ -1441,7 +1441,7 @@ function renderNet(){
       force:D.level!=='all'?{repulsion:nodes.length>30?420:900,edgeLength:D.level==='plasmid'?[60,150]:[130,320],gravity:.05,layoutAnimation:false}:{repulsion:nodes.length>100?70:nodes.length>60?120:nodes.length>30?260:420,edgeLength:[50,200],gravity:.07,layoutAnimation:false},
       categories:[...gl.map(l=>({name:l,itemStyle:{color:catColor(S.grps.find(g=>g.label===l).i)}})),...refGs.map(g=>({name:g.label+' reference plasmids',itemStyle:{color:catColor(g.i)+'55'}}))],
       label:{show:showN,position:circ?'outside':'right',color:t.text,fontSize:11},labelLayout:{hideOverlap:true},
-      edgeLabel:{show:showE,fontSize:10,color:t.text,textBorderColor:t.panel,textBorderWidth:3,formatter:p=>p.data.lbl||''},
+      edgeLabel:{show:showE,fontSize:10,fontWeight:600,color:NETLBL,textBorderColor:t.panel,textBorderWidth:3,formatter:p=>p.data.lbl||''},
       emphasis:{focus:'adjacency',lineStyle:{width:5},edgeLabel:{show:true}},
       data:nodes.map(x=>x.k==='hub'?{name:x.name,kind:'hub',g:x.g,category:gl.length,symbol:'diamond',symbolSize:30,itemStyle:{color:REFC,borderColor:REFB,borderWidth:2},label:{show:true,position:'top',color:t.text,fontSize:11,fontWeight:600,textBorderColor:t.panel,textBorderWidth:3,formatter:()=>`Reference ${x.g.label}`}}:x.k==='in'
         ?{name:x.name,kind:'in',deg:deg[x.name],category:gl.indexOf(x.g.label),symbolSize:(D.level==='plasmid'&&x.name===D.p)?46:12+Math.min(26,deg[x.name]*2.5),itemStyle:{borderColor:t.cls[PL[x.name].status],borderWidth:(D.level==='plasmid'&&x.name===D.p)?6:3.5}}
