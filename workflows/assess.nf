@@ -196,11 +196,11 @@ process HTML_REPORT {
 
     script:
     """
-    printf 'plasmid_1\\tplasmid_2\\tsubcommunity\\tdcj\\n' > reference.tsv
+    printf 'plasmid_1\\tplasmid_2\\tsubcommunity\\tdcj\\tcontainment\\n' > reference.tsv
     for f in baseline/*.member_pairs.tsv; do
       [ -e "\$f" ] || continue
       sc=\$(basename "\$f" .member_pairs.tsv)
-      awk -F'\\t' -v sc="\$sc" 'NR>1 && \$4 ~ /^[0-9]+(\\.[0-9]+)?\$/ && \$5!="True" {print \$1"\\t"\$2"\\t"sc"\\t"\$4}' "\$f" >> reference.tsv
+      awk -F'\\t' -v sc="\$sc" 'NR>1 && \$4 ~ /^[0-9]+(\\.[0-9]+)?\$/ && \$5!="True" {print \$1"\\t"\$2"\\t"sc"\\t"\$4"\\t"((\$3 ~ /^[0-9]+(\\.[0-9]+)?\$/) ? \$3 : "NA")}' "\$f" >> reference.tsv
     done
     if [ "\$(wc -l < reference.tsv)" -gt 1 ]; then
       CA_NOOPEN=1 sh html_report/make_report.sh ${final_output_ext} report.html reference.tsv ${inputs_tsv}

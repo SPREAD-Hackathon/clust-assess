@@ -667,7 +667,7 @@ function buildRef(text){
   const nl=text.indexOf('\n'), head=(nl<0?text:text.slice(0,nl)).replace(/\r$/,'').replace(/^﻿/,'');
   const delim=['\t',';',','].map(x=>[x,head.split(x).length]).sort((x,y)=>y[1]-x[1])[0][0];
   const header=head.split(delim).map(x=>x.trim()), find=names=>header.findIndex(h=>names.includes(key(h)));
-  const ia=find(COLS.a), ib=find(COLS.b), id=find(COLS.dcj), isub=find(['subcommunity','subcommunityid']), ic=find(['community','communityid']), ig=isub>=0?isub:ic;
+  const ia=find(COLS.a), ib=find(COLS.b), id=find(COLS.dcj), ico=find(COLS.cont), isub=find(['subcommunity','subcommunityid']), ic=find(['community','communityid']), ig=isub>=0?isub:ic;
   const bad=msg=>{ const e=new Error(msg); e.kind='invalid'; e.file=REF_FILE; e.header=header; throw e; };
   if(ia<0||ib<0) bad('Plasmid name column(s) missing: '+[ia<0&&'plasmid_1',ib<0&&'plasmid_2'].filter(Boolean).join(', ')+'.');
   if(id<0) bad('The reference database needs a dcj column.');
@@ -679,6 +679,7 @@ function buildRef(text){
     raw++; const f=line.split(delim), a=(f[ia]||'').trim(), b=(f[ib]||'').trim(), k=(f[ig]||'').trim(), d=parseFloat(f[id]);
     if(!a||!b||a===b||!k||!(d>=0)){ skipped++; continue; }
     let g=groups.get(k); if(!g){ g={key:k,names:[],idx:new Map(),pa:[],pb:[],pd:[],hist:new Map(),comm:ic>=0&&ic!==ig?(f[ic]||'').trim():''}; groups.set(k,g); }
+    if(ico>=0){ const cv=parseFloat(f[ico]); if(cv>=0){ g.cn=(g.cn||0)+1; g.cs=(g.cs||0)+cv; g.cq=(g.cq||0)+cv*cv; } }
     let x=g.idx.get(a); if(x===undefined){ x=g.names.length; g.idx.set(a,x); g.names.push(a); }
     let y=g.idx.get(b); if(y===undefined){ y=g.names.length; g.idx.set(b,y); g.names.push(b); }
     g.pa.push(x); g.pb.push(y); g.pd.push(d); g.hist.set(d,(g.hist.get(d)||0)+1);
@@ -689,6 +690,7 @@ function buildRef(text){
     g.h=mkHist(g.hist); g.n=g.h.n; total+=g.n; delete g.hist; g.pa=Int32Array.from(g.pa); g.pb=Int32Array.from(g.pb); g.pd=Float32Array.from(g.pd);
     let mu=0; g.h.vals.forEach((v,i)=>mu+=v*g.h.cnt[i]); mu/=g.n; let ss=0; g.h.vals.forEach((v,i)=>ss+=g.h.cnt[i]*(v-mu)**2);
     g.md=mu; g.sd=g.n>1?Math.sqrt(ss/(g.n-1)):NaN; g.mc=NaN; g.sc=NaN;
+    g.cm=g.cn>=MIN_REF_PAIRS?g.cs/g.cn:NaN; g.csd=g.cn>=MIN_REF_PAIRS?Math.sqrt(Math.max(0,(g.cq-g.cs*g.cs/g.cn)/(g.cn-1))):NaN;   // containment distance of the reference pairs, when the reference has it
     const sm=/subcommunity[_\s\-]*([A-Za-z0-9]+)/i.exec(k), cm=/community[_\s\-]*([A-Za-z0-9]+)/i.exec(g.comm||k);
     g.sub=sm?sm[1]:''; g.commId=cm?cm[1]:''; g.label=g.sub||k;
     g.pl=new Set(g.names); g.names.forEach(n=>{ if(!set.has(n)){ set.add(n); comm[n]=k; } });
@@ -779,7 +781,7 @@ function build(text, refText, inputsText){
   const keys = [...new Set(rows.map(r=>r.grpKey))];
   S.grps = keys.map((k,i)=>({key:k, label:R.groups.has(k)?R.groups.get(k).label:k, i, n:rows.filter(r=>r.grpKey===k).length}));
   const gi = Object.fromEntries(S.grps.map(g=>[g.key,g]));
-  rows.forEach((r,i)=>{ r.id=i; r.grp=gi[r.grpKey]; });
+  rows.forEach((r,i)=>{ r.id=i; r.grp=gi[r.grpKey]; }); S.allRows=rows;
   S.cross.forEach(r=>{ r.grp=gi[r.grpKey]||null; });
   // baselines come from the reference database: the subcommunity's own reference pairs
   S.derived=[]; S.unmatched=[];
@@ -1049,23 +1051,32 @@ function renderHeat(){
     const ord=clusterOrder(its.filter(x=>!x.ref).map(x=>x.name),(a,b)=>{ const r=val.get(K2(a,b)); if(!r) return NaN; const d=Math.min(r.dcj/(2*PLING_DCJ),1); return Number.isFinite(r.contRaw)?(d+Math.min(r.contRaw/(2*PLING_CONT),1))/2:d; }), byN=new Map(its.map(x=>[x.name,x]));
     its.filter(x=>x.ref).forEach(x=>ordered.push(x)); ord.forEach(n=>ordered.push(byN.get(n))); });
   const ix=new Map(ordered.map((x,i)=>[x.name,i])), nRef=ordered.filter(x=>x.ref).length;
-  $('hmNote').textContent=`${ordered.length-nRef} input plasmids`+(capped?` (the ${MAXN} most-connected of ${S.plasmids.length})`:'')+(nRef?` + ${nRef} known reference plasmid${nRef===1?'':'s'} from your file (grey labels)`:'')+'. The same order is used in every heatmap: by DCJ (and containment, when present) similarity inside each subcommunity, so tight subgroups form blocks. Blank cells have no value in the data; grey cells are pairs for which Pling did not compute a DCJ.';
+  $('hmNote').textContent=`${ordered.length-nRef} input plasmids`+(capped?` (the ${MAXN} most-connected of ${S.plasmids.length})`:'')+(nRef?` + ${nRef} known reference plasmid${nRef===1?'':'s'} from your file (grey labels)`:'')+'. The same order is used in every heatmap: by DCJ (and containment, when present) similarity inside each subcommunity, so tight subgroups form blocks. Blank cells have no value in the data; grey cells are pairs for which Pling did not compute a DCJ. Dots (●, ●●, ●●●) mark pairs closer than the mean of the background by 1, 1.5 and 2 standard deviations (the cutoffs are listed under each colour bar).';
   const lab=ordered.map(x=>x.name), show=ordered.length<=70, bounds=[]; ordered.forEach((x,i)=>{ if(i&&x.g!==ordered[i-1].g) bounds.push({xAxis:i-.5}); });
   const lc=(v,i)=>ordered[i]&&ordered[i].ref?REFB:t.text, ramp=['#e9f0fb','#9dbfee','#4a86de','#173f82'];
+  // z = (d - mean) / SD against a background of the same measure: the subcommunity's reference pairs when the reference has it
+  // (DCJ, and containment when the reference table has that column), otherwise the input pairs of the subcommunity themselves.
+  const ZL=[1,1.5,2], zMeasure=kind=>kind==='cont'?'cont':kind==='mash'?'mash':'dcj', zVal=(r,m)=>m==='cont'?r.contRaw:m==='mash'?r.mashRaw:r.dcj;
+  const zBack=(g,m)=>{ const rg=g&&g.ref; if(rg&&m==='dcj'&&Number.isFinite(rg.sd)&&rg.sd>0) return {mean:rg.md,sd:rg.sd,src:'reference'};
+    if(rg&&m==='cont'&&Number.isFinite(rg.csd)&&rg.csd>0) return {mean:rg.cm,sd:rg.csd,src:'reference'};
+    const v=[...new Set((S.allRows||[]).filter(r=>r.grp===g))].map(r=>zVal(r,m)).filter(Number.isFinite); if(v.length<MIN_REF_PAIRS) return null; const mu=mean(v), sd=sdArr(v,mu); return sd>0?{mean:mu,sd,src:'your input pairs'}:null; };
   const hexRgb=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
   const rampAt=u=>{ const x=Math.min(1,Math.max(0,u))*(ramp.length-1), i=Math.min(ramp.length-2,Math.floor(x)), f=x-i, a=hexRgb(ramp[i]), b=hexRgb(ramp[i+1]); return '#'+a.map((v,k)=>Math.round(v+(b[k]-v)*f).toString(16).padStart(2,'0')).join(''); };
   // own colour bar (drawn as graphic): 0 at the top, dark = closer, with the Pling threshold marked
-  const cbar=(hi,stops,thr,sat,name)=>{ const t=T(), H=200, Wd=16, yv=v=>H*Math.min(1,v/hi), nice=v=>String(+v.toPrecision(3)), ch=[
+  const cbar=(hi,stops,thr,sat,name,zl)=>{ const t=T(), H=170, Wd=16, yv=v=>H*Math.min(1,v/hi), nice=v=>String(+v.toPrecision(3)), ch=[
       {type:'rect',shape:{x:0,y:0,width:Wd,height:H},style:{fill:{type:'linear',x:0,y:0,x2:0,y2:1,colorStops:stops.map((c,i)=>({offset:i/(stops.length-1),color:c}))},stroke:t.border,lineWidth:1}},
       {type:'text',x:0,y:-22,style:{text:'closer',fill:t.muted,font:'11px sans-serif'}},
       {type:'text',x:0,y:H+8,style:{text:'farther'+(sat?' (≥ '+nice(hi)+')':''),fill:t.muted,font:'11px sans-serif'}}];
     (()=>{ const raw=hi/4, mag=Math.pow(10,Math.floor(Math.log10(raw))), st=[1,2,2.5,5,10].map(m=>m*mag).find(x=>x>=raw*.9)||raw, out=[]; for(let v=0;v<=hi*1.0001;v+=st) out.push(+v.toPrecision(6)); return out; })().filter(v=>!(Number.isFinite(thr)&&Math.abs(v-thr)<.07*hi)).forEach(v=>ch.push({type:'text',x:Wd+8,y:yv(v)-6,style:{text:nice(v),fill:t.muted,font:'11px sans-serif'}}));
     if(Number.isFinite(thr)&&thr<=hi){ ch.push({type:'line',shape:{x1:-5,y1:yv(thr),x2:Wd+5,y2:yv(thr)},style:{stroke:t.text,lineWidth:1.6,lineDash:[3,2]}},{type:'text',x:Wd+8,y:yv(thr)-6,style:{text:nice(thr)+' · Pling threshold',fill:t.text,font:'600 11px sans-serif'}}); }
-    ch.push({type:'text',x:0,y:H+26,style:{text:name+(Number.isFinite(thr)&&thr>hi?' (Pling threshold '+nice(thr)+' is beyond the scale)':''),fill:t.muted,font:'11px sans-serif'}});
-    return [{type:'group',right:18,top:'middle',children:ch}]; };
+    ch.push({type:'text',x:0,y:H+26,style:{text:name,fill:t.muted,font:'11px sans-serif'}});
+    (zl||[]).forEach((tx,q)=>ch.push({type:'text',x:0,y:H+46+q*15,style:{text:tx,fill:t.muted,font:'11px sans-serif'}}));
+    return [{type:'group',right:18,top:34,children:ch}]; };
   const draw=(id,kind)=>{
-    const pick=r=>kind==='pos'?r.cp:kind==='dcj'?r.dcj:kind==='cont'?r.contRaw:r.mashRaw, data=[]; let vmin=Infinity,vmax=-Infinity;
-    val.forEach((r,k)=>{ const [a,b]=k.split('\u0000'); if(!ix.has(a)||!ix.has(b)) return; const v=pick(r); if(!Number.isFinite(v)) return; vmin=Math.min(vmin,v); vmax=Math.max(vmax,v); data.push([ix.get(a),ix.get(b),v]); });
+    const pick=r=>kind==='pos'?r.cp:kind==='dcj'?r.dcj:kind==='cont'?r.contRaw:r.mashRaw, data=[], dots=[]; let vmin=Infinity,vmax=-Infinity;
+    const zm=zMeasure(kind), zb=new Map(); S.grps.forEach(g=>zb.set(g,zBack(g,zm)));
+    val.forEach((r,k)=>{ const [a,b]=k.split('\u0000'); if(!ix.has(a)||!ix.has(b)) return; const v=pick(r); if(!Number.isFinite(v)) return; vmin=Math.min(vmin,v); vmax=Math.max(vmax,v); data.push([ix.get(a),ix.get(b),v]);
+      const zk=r.grp&&zb.get(r.grp), zv=zVal(r,zm); if(zk&&Number.isFinite(zv)){ const lvl=ZL.filter(c=>(zv-zk.mean)/zk.sd<=-c).length; if(lvl>0) dots.push([ix.get(a),ix.get(b),lvl]); } });
     if(kind==='cont'||kind==='mash') S.censPairs.forEach(([a,b,c,m])=>{ const v=kind==='cont'?c:m; if(Number.isFinite(v)&&ix.has(a)&&ix.has(b)&&a!==b){ vmin=Math.min(vmin,v); vmax=Math.max(vmax,v); data.push([ix.get(a),ix.get(b),v],[ix.get(b),ix.get(a),v]); } });   // censored DCJ pairs still have containment / Mash
     if(!data.length) return false;
     const gdata=[]; if(kind==='dcj'||kind==='pos') S.censPairs.forEach(([a,b])=>{ if(ix.has(a)&&ix.has(b)&&a!==b){ const i=ix.get(a), j=ix.get(b); gdata.push([i,j,0],[j,i,0]); } });
@@ -1074,7 +1085,9 @@ function renderHeat(){
     const hi=Number.isFinite(cap)?Math.min(cap,vmax>0?vmax:cap):(vmax>0?vmax:1), stops=Array.from({length:17},(_,q)=>rampAt(1-Math.pow(q/16,gam)));
     const vm=kind==='pos'?{type:'piecewise',seriesIndex:0,orient:'vertical',right:12,top:'center',textStyle:{color:t.muted},pieces:BANDS.map((b,j)=>j===0?{gte:95,lte:100,color:b[1],label:'closer than 95%'}:j===1?{gte:75,lt:95,color:b[1],label:'75–95%'}:j===2?{gte:25,lt:75,color:b[1],label:'typical (25–75%)'}:j===3?{gte:5,lt:25,color:b[1],label:'5–25%'}:{gte:0,lt:5,color:b[1],label:'looser than 95%'})}
       :{show:false,min:0,max:hi,dimension:2,seriesIndex:0,inRange:{color:stops},outOfRange:{color:[stops[16]]}};
-    const bar=kind==='pos'?[]:cbar(hi,stops,thr,vmax>hi,kind==='cont'?'containment distance':kind==='mash'?'Mash distance':'DCJ distance');
+    const zs=[...zb.values()].filter(Boolean), z0=zs[0], one=zs.length===1, zsrc=zs.every(x=>x.src==='reference')?'the reference':zs.every(x=>x.src!=='reference')?'your input pairs':'reference / input pairs';
+    const zl=!zs.length?['z-score: no background']:[...ZL.map((c,q)=>'●'.repeat(q+1)+' z ≤ −'+c+(one?(z0.mean-c*z0.sd>=0?' (d ≤ '+(+(z0.mean-c*z0.sd).toPrecision(3))+')':' (below 0: none)'):'')),'vs '+zsrc+(one?'':', per subcommunity')];
+    const bar=kind==='pos'?[]:cbar(hi,stops,thr,vmax>hi,kind==='cont'?'containment distance':kind==='mash'?'Mash distance':'DCJ distance',Number.isFinite(thr)&&thr>hi?['Pling threshold '+thr+': off scale',...zl]:zl);
     ch(id).setOption(base({
       grid:{left:show?165:20,right:210,top:20,bottom:show?150:20},
       tooltip:{...base().tooltip,position:'top',formatter:p=>{ const a=ordered[p.value[1]], b=ordered[p.value[0]]; if(p.seriesIndex===1) return `<b>${esc(a.name)}</b><br>↔ <b>${esc(b.name)}</b><br>DCJ not computed (containment above Pling's threshold)`; const r=val.get(K2(a.name,b.name));
@@ -1085,6 +1098,8 @@ function renderHeat(){
       series:[...[],{type:'heatmap',data,itemStyle:{borderColor:t.panel,borderWidth:show?1:0},emphasis:{itemStyle:{borderColor:t.text,borderWidth:1.5}},
         markLine:{silent:true,symbol:'none',label:{show:false},lineStyle:{color:t.text,width:1,type:'dashed',opacity:.5},data:[...bounds,...bounds.map(b=>({yAxis:b.xAxis}))]}}]
     .concat(gdata.length?[{type:'heatmap',data:gdata,itemStyle:{color:'#cdd1d8',borderColor:t.panel,borderWidth:show?1:0}}]:[])
+    .concat(dots.length?[{type:'custom',silent:true,z:6,data:dots,renderItem:(pm,api)=>{ const c=api.coord([api.value(0),api.value(1)]), sz=api.size([1,1]), n=api.value(2), r=Math.max(1.4,Math.min(sz[0],sz[1])*.12), gap=r*2.7, ch2=[];
+      for(let q=0;q<n;q++) ch2.push({type:'circle',shape:{cx:c[0]+(q-(n-1)/2)*gap,cy:c[1],r},style:{fill:'#ffffff',stroke:'rgba(20,30,50,.5)',lineWidth:.6}}); return {type:'group',children:ch2}; }}]:[])
     }),true);
     return true;
   };
@@ -1875,8 +1890,8 @@ Object.entries({
 Object.assign(INFO,{
 'heatmap':['Pairwise heatmaps',"A matrix of every pair of your plasmids for each measure in your results file: DCJ, and containment and Mash distance when the file has them. All heatmaps use the same plasmid order (by DCJ (and containment, when present) similarity inside each subcommunity), so the same plasmids line up in every panel. Known reference plasmids that also appear in your file are added with grey labels.","A block of similar plasmids shows up as a block of the same colour. If the DCJ, containment and Mash heatmaps show the same blocks, the measures agree; a plasmid that stands out in one but not in another is worth a look. Blank cells have no value in the data.","It is the pairwise view of the README question: which plasmids form a tight group, whether any plasmid does not belong, and whether the different measures agree."],
 'heatDcj':['DCJ heatmap',"DCJ distance between every pair of your plasmids. The colour can show where each pair falls in the reference (default) or the raw DCJ.","Position in the reference: dark green = closer than 95% of the reference pairs, grey = typical, red = looser than 95%. Raw DCJ: darker = closer (low DCJ). The scale runs from 0 to twice the Pling threshold (8), cells beyond it take the lightest colour, and a dashed line marks the Pling threshold (4). The scale is a square-root scale, so small distances get more of the colour range. Grey cells are pairs for which Pling did not compute a DCJ (containment above its threshold).","DCJ is the measure the report judges against the reference."],
-'heatCont':['Containment heatmap',"Containment distance between every pair of your plasmids, as given in your results file (0 = the smaller plasmid is fully contained in the larger, 1 = nothing shared).","Darker = closer (low distance). The scale runs from 0 to 1 (twice the Pling threshold of 0.5), with a dashed line at the threshold, and small distances get more of the colour range. There is no reference baseline for containment, so the values are shown as supplied and are not part of the judgement.","It shows whether the plasmids that are close by DCJ also share sequence."],
-'heatMash':['Mash heatmap',"Mash distance between every pair of your plasmids, as given in your results file (0 = identical, towards 1 = unrelated).","Darker = closer (low Mash distance). There is no reference baseline for Mash, so the values are shown as supplied and are not part of the judgement.","It is an alignment-free check on the DCJ result: similar blocks in the DCJ and Mash heatmaps mean the two measures agree."]
+'heatCont':['Containment heatmap',"Containment distance between every pair of your plasmids, as given in your results file (0 = the smaller plasmid is fully contained in the larger, 1 = nothing shared).","Darker = closer (low distance). The scale runs from 0 to 1 (twice the Pling threshold of 0.5), with a dashed line at the threshold, and small distances get more of the colour range. There is no reference baseline for containment, so the values are shown as supplied and are not part of the judgement.","It shows whether the plasmids that are close by DCJ also share sequence. Dots (●, ●●, ●●●) mark pairs closer than the mean of the background by 1, 1.5 and 2 standard deviations; the background is the subcommunity's reference pairs when the reference has this measure, otherwise your own input pairs (stated under the colour bar)."],
+'heatMash':['Mash heatmap',"Mash distance between every pair of your plasmids, as given in your results file (0 = identical, towards 1 = unrelated).","Darker = closer (low Mash distance). There is no reference baseline for Mash, so the values are shown as supplied and are not part of the judgement.","It is an alignment-free check on the DCJ result: similar blocks in the DCJ and Mash heatmaps mean the two measures agree. Dots (●, ●●, ●●●) mark pairs closer than the mean of the background by 1, 1.5 and 2 standard deviations; the background is the subcommunity's reference pairs when the reference has this measure, otherwise your own input pairs (stated under the colour bar)."]
 });
 Object.entries({
   network:' The dashed outline marks one subcommunity: it encloses your plasmids (solid nodes) and the reference plasmids of the same subcommunity (light nodes in the same colour), so you can see that your plasmids belong to it.'

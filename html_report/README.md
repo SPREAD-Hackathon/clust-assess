@@ -30,7 +30,7 @@ The pipeline's main result (`;`, `,` or tab separated).
 | `dcj_censored` | no | `True` = Pling did not compute the DCJ (containment above its threshold); these pairs are left out of the judgement, counted, and drawn grey in the DCJ heatmap |
 | `community` | no | older alternative to `subcommunity_A/B` |
 | `containment` | no | Pling containment **distance** (0 = fully contained, 1 = nothing shared); drawn as its own pairwise heatmap (not part of the judgement) |
-| `mash` | no | Mash distance; drawn as its own pairwise heatmap when present (not part of the judgement) |
+| `mash` | no | pairwise Mash distance (0 = identical); drawn as its own heatmap when the column is present. The pipeline does not write it yet: its outputs only carry the ACCIO Mash score of each input against its reference plasmid |
 | `Plasmid A country` / `Plasmid B country`, `... host`, `... date` | no | metadata; each one unlocks its own section |
 | `community_DCJ`, `community_containment`, `same_subcommunity`, `subcommunity_status`, `p_tighter` | no | ignored: the reference pairs are the baseline |
 
@@ -47,7 +47,7 @@ A pair with exactly one plasmid in the reference is treated as a measured input-
 `reference/reference_db.tsv.gz` is the Pling pair table of the reference subcommunity: community 0, subcommunity 7129, 730 plasmids and 230,842 pairs, DCJ only. Users do not supply it.
 
 - **Coverage:** a subcommunity that is not in the bundled table, or whose reference has fewer than 10 pairs, is not assessed and is listed in the Summary.
-- **Format** (tab separated, plain or `.gz`): `plasmid_1`, `plasmid_2`, `subcommunity` (or `community`), `dcj` (>= 0); `community` and `containment` are optional.
+- **Format** (tab separated, plain or `.gz`): `plasmid_1`, `plasmid_2`, `subcommunity` (or `community`), `dcj` (>= 0); `containment` (distance) is optional and, when present, gives the background for the containment dots. The bundled table is DCJ only; the table the pipeline builds from `baseline/*.member_pairs.tsv` includes containment.
 - **To update or extend it:** replace `reference/reference_db.tsv.gz` with a table in the same format (it can hold several subcommunities), or pass another table as a third argument: `sh html_report/make_report.sh results/final_output_extended.csv results/report.html my_reference.tsv`.
 
 ## How the report judges the input
@@ -58,7 +58,7 @@ A reference whose 95th-percentile DCJ is above 25 is flagged as broad.
 
 ## What is in the report
 
-Summary (checks, key figures), Distance distributions by subcommunity (with a Details view of which plasmid sits where), Pairwise heatmaps (DCJ, plus containment and Mash when present; darker = closer, scale 0 to twice the Pling threshold on a square-root scale, threshold marked on the colour bar, plasmids ordered by DCJ and containment together), Position of the input in the reference (rings and ranked pairs, with drill-down), Plasmid network (drill-down), and the optional Geography / Host / Dates, Plasmid statistics, Pair explorer and Method & keys sections. Every chart has an ⓘ explaining what it shows and how to read it.
+Summary (checks, key figures), Distance distributions by subcommunity (with a Details view of which plasmid sits where), Pairwise heatmaps (DCJ, plus containment and Mash when present; darker = closer, scale 0 to twice the Pling threshold on a square-root scale, threshold marked on the colour bar, 1-3 dots for pairs closer than the background mean by 1, 1.5 and 2 SD (the analyst's z-score levels; background = the subcommunity's reference pairs when the reference has that measure, otherwise the input pairs themselves), grey cells for censored DCJ pairs, plasmids ordered by DCJ and containment together), Position of the input in the reference (rings and ranked pairs, with drill-down), Plasmid network (drill-down), and the optional Geography / Host / Dates, Plasmid statistics, Pair explorer and Method & keys sections. Every chart has an ⓘ explaining what it shows and how to read it.
 
 ## Files
 
