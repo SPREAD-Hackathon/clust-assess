@@ -36,7 +36,7 @@ The pipeline's main result (`;`, `,` or tab separated).
 
 ### Optional: `db_distributions/within_pairs.tsv.gz`
 
-The database pairs of the pipeline's own Pling run. When present (by default in `db_distributions/` next to the results file, or as a fifth argument), they are the background of the z-scores (heatmap dots, Closeness analysis, close-pair network), exactly as in the analyst's `pairwise_insights.py`, which gives identical close pairs, z levels and close groups. Without it the background is the pairs in the results file (input pairs plus input–reference pairs). The Closeness analysis has a Background switch to use the reference database instead, which gives different numbers because it is a different set of pairs; the judgement elsewhere in the report (closer than X% of the reference) always uses the reference.
+The database pairs of the pipeline's own Pling run. When present (by default in `db_distributions/` next to the results file, or as a fifth argument), they are the background of the z-scores (heatmap dots, Closeness analysis, close-pair network), exactly as in the analyst's `pairwise_insights.py`, which gives identical close pairs, z levels and close groups. Without it the background is the pairs in the results file (input pairs plus input–reference pairs). The Closeness analysis has a Background switch to use the pairs in the results file instead. The judgement elsewhere in the report (closer than X% of the reference) uses the reference, which is these same database pairs when they are present.
 
 ### Optional: `inputs.tsv`
 
@@ -47,6 +47,8 @@ The pipeline's table of inputs. Each input's nearest database plasmid (`nearest_
 A pair with exactly one plasmid in the reference is treated as a measured input-to-reference pair: it is shown in the network and the plasmid tables and is not part of the judgement.
 
 ## The reference database (part of the program)
+
+**When the pipeline's own database pairs are present** (`db_distributions/within_pairs.tsv.gz`, see below), they are the reference for the subcommunities of your plasmids, and the bundled table below is used only for any other subcommunity. This keeps the whole report (distance distributions, the "closer than X%" figures, the z-scores) on the same pairs as the analyst's scripts. The pipeline's database holds copies of your inputs, so the Summary flags that the comparison is tighter than against unrelated plasmids.
 
 `reference/reference_db.tsv.gz` is the Pling pair table of the reference subcommunity: community 0, subcommunity 7129, 730 plasmids and 230,842 pairs, DCJ only. Users do not supply it.
 
