@@ -128,7 +128,7 @@ def build(queries_tsv, call_files, input_pairs_tsv, baseline_files, params: dict
         "params": params, "subcommunities": _jsonable(subs), "inputs": _jsonable(inputs),
         "pairs": _jsonable(final),
     }
-    (out / "clust_assess.json").write_text(json.dumps(summary, indent=2) + "\n")
+    (out / "clust_assess.json").write_text(json.dumps(summary, indent=2, allow_nan=False) + "\n")
     return summary
 
 
@@ -151,11 +151,16 @@ def _write_tsv(df: pd.DataFrame, path: Path) -> None:
 
 
 def _jsonable(df: pd.DataFrame) -> list[dict]:
+    """Records for clust_assess.json. Every missing value (NaN, inf, '' or 'NA') becomes null, so each
+    field is either its own type or null; the CSV/TSV outputs keep 'NA'."""
     recs = df.to_dict("records")
     for r in recs:
         for k, v in r.items():
+            if hasattr(v, "item"):
+                v = v.item()
             if isinstance(v, float) and (math.isnan(v) or math.isinf(v)):
-                r[k] = None
-            elif hasattr(v, "item"):
-                r[k] = v.item()
+                v = None
+            elif isinstance(v, str) and v in ("", "NA"):
+                v = None
+            r[k] = v
     return recs

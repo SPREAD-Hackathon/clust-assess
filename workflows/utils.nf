@@ -25,6 +25,36 @@ process PREP_QUERIES {
     """
 }
 
+// Describes the database's own Pling run: within-subcommunity / within-community distance distributions
+// (bin/distance_distribution.py) and the extra figures (bin/distribution_insights.py). Descriptive only:
+// nothing downstream reads it, and a failure here does not stop the run (errorStrategy 'ignore' in nextflow.config).
+process DB_DISTRIBUTIONS {
+    publishDir "${params.results_dir}", mode: 'copy'
+
+    input:
+    path(pling, stageAs: 'db_pling')
+
+    output:
+    path('db_distributions'), emit: dir
+
+    script:
+    """
+    distance_distribution.py --pling_dir db_pling --outdir db_distributions --plots \\
+        --dcj_threshold ${params.dcj} --containment_threshold ${params.db_containment} > distributions.log 2>&1 \\
+        || { tail -30 distributions.log >&2; exit 1; }
+    distribution_insights.py --dist_dir db_distributions >> distributions.log 2>&1 \\
+        || { tail -30 distributions.log >&2; exit 1; }
+    mv distributions.log db_distributions/
+    """
+
+    stub:
+    """
+    mkdir -p db_distributions
+    printf 'subcommunity\\tn_members\\tn_pairs\\n' > db_distributions/subcommunity_summary.tsv
+    echo '{"stub": true}' > db_distributions/run_info.json
+    """
+}
+
 process VERSIONS {
     publishDir "${params.results_dir}/runningstat", mode: 'copy'
 

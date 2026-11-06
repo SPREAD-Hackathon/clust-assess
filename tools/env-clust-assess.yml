@@ -28,6 +28,7 @@ dependencies:
   - plasnet=0.7.0
   # clust-assess helpers / tests
   - pyyaml
+  - matplotlib     # DB distribution figures (bin/distance_distribution.py, bin/distribution_insights.py)
   - pytest
   - git
   - pip

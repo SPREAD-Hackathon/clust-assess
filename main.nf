@@ -3,7 +3,7 @@ nextflow.enable.dsl = 2
 
 include { BUILD_DB } from './workflows/build_db.nf'
 include { ASSESS   } from './workflows/assess.nf'
-include { VERSIONS } from './workflows/utils.nf'
+include { VERSIONS; DB_DISTRIBUTIONS } from './workflows/utils.nf'
 
 def require(names) {
     names.each { n ->
@@ -29,16 +29,22 @@ workflow {
 
     if (params.mode == 'build_db') {
         require(['refs'])
-        BUILD_DB(channel.fromPath(params.refs, checkIfExists: true).collect())
     }
     else if (params.mode == 'assess') {
         require(['input', 'db'])
-        ASSESS(channel.fromPath(params.input, checkIfExists: true).collect(),
-               channel.value(file(params.db, checkIfExists: true)))
     }
     else {
         require(['refs', 'input'])
-        def db = BUILD_DB(channel.fromPath(params.refs, checkIfExists: true).collect()).db
+    }
+
+    def db = params.mode == 'assess'
+        ? channel.value(file(params.db, checkIfExists: true))
+        : BUILD_DB(channel.fromPath(params.refs, checkIfExists: true).collect()).db
+    if (params.mode != 'build_db') {
         ASSESS(channel.fromPath(params.input, checkIfExists: true).collect(), db)
+    }
+    // Distance distributions of the database's own Pling run (default <db>/pling), once per run
+    if (params.db_distributions) {
+        DB_DISTRIBUTIONS(db.map { d -> params.db_pling_dir ? file(params.db_pling_dir, checkIfExists: true) : d.resolve('pling') })
     }
 }
