@@ -178,6 +178,42 @@ process REPORT {
     """
 }
 
+// Interactive HTML report (html_report/): one self-contained report.html built from final_output.csv.
+// The reference is rebuilt from this run's baseline/*.member_pairs.tsv (censored pairs dropped); if that
+// gives nothing, the report uses the reference bundled in html_report/reference. Optional: a failure here
+// never stops the run (errorStrategy 'ignore' in nextflow.config). Switch off with --html_report false.
+process HTML_REPORT {
+    publishDir "${params.results_dir}", mode: 'copy'
+
+    input:
+    path(final_output)
+    path(baselines, stageAs: 'baseline/*')
+    path(report_dir, stageAs: 'html_report')
+
+    output:
+    path('report.html')
+
+    script:
+    """
+    printf 'plasmid_1\\tplasmid_2\\tsubcommunity\\tdcj\\n' > reference.tsv
+    for f in baseline/*.member_pairs.tsv; do
+      [ -e "\$f" ] || continue
+      sc=\$(basename "\$f" .member_pairs.tsv)
+      awk -F'\\t' -v sc="\$sc" 'NR>1 && \$4 ~ /^[0-9]+(\\.[0-9]+)?\$/ && \$5!="True" {print \$1"\\t"\$2"\\t"sc"\\t"\$4}' "\$f" >> reference.tsv
+    done
+    if [ "\$(wc -l < reference.tsv)" -gt 1 ]; then
+      CA_NOOPEN=1 sh html_report/make_report.sh ${final_output} report.html reference.tsv
+    else
+      CA_NOOPEN=1 sh html_report/make_report.sh ${final_output} report.html
+    fi
+    """
+
+    stub:
+    """
+    touch report.html
+    """
+}
+
 workflow ASSESS {
     take:
     inputs
@@ -212,4 +248,10 @@ workflow ASSESS {
            PLING_INPUTS.out.pairs,
            PLING_MEMBERS.out.baseline.flatten().collect().ifEmpty([]),
            VERIFY_DB.out.info)
+
+    if (params.html_report) {
+        HTML_REPORT(REPORT.out[0],
+                    PLING_MEMBERS.out.baseline.flatten().collect().ifEmpty([]),
+                    file("${projectDir}/html_report", checkIfExists: true))
+    }
 }
